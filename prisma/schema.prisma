@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Role values: SUPER_ADMIN, AVOCAT, NOTAIRE, HUISSIER
+// DossierStatus values: EN_COURS, EN_ATTENTE, TERMINE, ANNULE, ARCHIVE
+// InvoiceStatus values: BROUILLON, ENVOYEE, PAYEE, EN_RETARD, ANNULEE
+// MessageType values: ADMIN_SUPPORT, PROFESSION_GROUP
+
+model User {
+  id                            String                    @id @default(cuid())
+  name                          String
+  email                         String                    @unique
+  password                      String
+  role                          String                    @default("AVOCAT")
+  phone                         String?
+  officeName                    String?
+  avatar                        String?
+  isActive                      Boolean                   @default(true)
+  isEmailVerified               Boolean                   @default(false)
+  emailVerificationToken        String?
+  emailVerificationTokenExpiry  DateTime?
+  wilayaId                      String?
+  wilaya                        Wilaya?                   @relation(fields: [wilayaId], references: [id])
+  customWilaya                  String?
+  subscription                  Subscription?
+  createdAt                     DateTime                  @default(now())
+  updatedAt                     DateTime                  @updatedAt
+  dossiers                      Dossier[]
+  clients                       Client[]
+  rendezVous                    RendezVous[]
+  documents                     Document[]
+  factures                      Facture[]
+  notifications                 Notification[]
+  sentMessages                  Message[]                 @relation("SentMessages")
+  conversations                 ConversationParticipant[]
+  chatSessions                  ChatSession[]
+  aiConversations               AiConversation[]
+
+  @@map("users")
+}
+
+model Wilaya {
+  id    String @id @default(cuid())
+  code  String @unique
+  name  String
+  users User[]
+
+  @@map("wilayas")
+}
+
+model Plan {
+  id           String         @id @default(cuid())
+  name         String
+  price        Float
+  durationDays Int            @default(30)
+  features     String
+  maxDossiers  Int            @default(50)
+  maxClients   Int            @default(100)
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id         String     @id @default(cuid())
+  userId     String     @unique
+  user       User       @relation(fields: [userId], references: [id])
+  planId     String
+  plan       Plan       @relation(fields: [planId], references: [id])
+  startDate  DateTime   @default(now())
+  endDate    DateTime
+  isActive   Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  paiements  Paiement[]
+
+  @@map("subscriptions")
+}
+
+model Client {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  fullName   String
+  phone      String?
+  email      String?
+  address    String?
+  nationalId String?
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  dossiers   Dossier[]
+
+  @@map("clients")
+}
+
+model Dossier {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  clientId    String?
+  client      Client?     @relation(fields: [clientId], references: [id])
+  title       String
+  description String?
+  caseType    String
+  status      String      @default("EN_COURS")
+  courtName   String?
+  caseNumber  String?
+  parties     String?
+  notes       String?
+  nextHearing DateTime?
+  deadline    DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  documents   Document[]
+  rendezVous  RendezVous[]
+
+  @@map("dossiers")
+}
+
+model RendezVous {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  dossierId   String?
+  dossier     Dossier?  @relation(fields: [dossierId], references: [id])
+  title       String
+  description String?
+  date        DateTime
+  duration    Int       @default(30)
+  location    String?
+  isDone      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@map("rendez_vous")
+}
+
+model Document {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  dossierId String?
+  dossier   Dossier?  @relation(fields: [dossierId], references: [id])
+  title     String
+  category  String?
+  fileUrl   String
+  fileSize  Int?
+  createdAt DateTime  @default(now())
+
+  @@map("documents")
+}
+
+model Facture {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  invoiceNumber  String    @unique
+  amount         Float
+  description    String?
+  status         String    @default("BROUILLON")
+  dueDate        DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  paiements      Paiement[]
+
+  @@map("factures")
+}
+
+model Paiement {
+  id             String        @id @default(cuid())
+  factureId      String?
+  facture        Facture?      @relation(fields: [factureId], references: [id])
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  amount         Float
+  method         String        @default("CIB")
+  reference      String?
+  createdAt      DateTime      @default(now())
+
+  @@map("paiements")
+}
+
+model Conversation {
+  id           String                     @id @default(cuid())
+  type         String
+  title        String?
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  lastReadAt     DateTime?
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  content        String
+  attachmentUrl  String?
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@map("messages")
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  title       String
+  content     String
+  isRead      Boolean   @default(false)
+  type        String    @default("info")
+  priority    String    @default("normal")
+  link        String?
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@map("notifications")
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  visitorId String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  messages  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("chat_sessions")
+}
+
+model AiConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String?
+  messages  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ai_conversations")
+}
+
+model LegalText {
+  id            String   @id @default(cuid())
+  category      String
+  lawReference  String
+  articleNumber String
+  title         String
+  content       String
+  keywords      String
+  createdAt     DateTime @default(now())
+
+  @@map("legal_texts")
+}
