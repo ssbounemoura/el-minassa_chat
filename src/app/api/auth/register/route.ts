@@ -2,58 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
-
-// Helper function to send email
-async function sendVerificationEmail(email: string, token: string, userName: string) {
-  try {
-    const host = process.env.EMAIL_HOST || process.env.SMTP_HOST;
-    const port = process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
-    const secure = process.env.EMAIL_SECURE === "true" || process.env.SMTP_SECURE === "true";
-    const user = process.env.EMAIL_USER || process.env.SMTP_USER;
-    const pass = process.env.EMAIL_PASS || process.env.SMTP_PASSWORD;
-    const from = process.env.EMAIL_FROM || process.env.SMTP_FROM || `no-reply@${host ?? "elminassa.dz"}`;
-
-    if (!host || !user || !pass) {
-      console.error("Missing email configuration for Nodemailer.");
-      return false;
-    }
-
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      auth: { user, pass },
-    });
-
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const verificationLink = `${baseUrl}/verify-email?token=${token}`;
-
-    const mailOptions = {
-      from,
-      to: email,
-      subject: "تأكيد حساب المنصة القانونية الجزائرية",
-      text: `مرحبا ${userName},\n\nشكراً لتسجيلك. الرجاء تفعيل حسابك عبر الضغط على الرابط التالي:\n${verificationLink}\n\nإذا لم تكن أنت من طلب هذا التسجيل، فتجاهل هذه الرسالة.`,
-      html: `
-        <div style="font-family: Cairo, sans-serif; direction: rtl; text-align: right; color: #1a202c;">
-          <h2 style="color: #1e3a5f;">مرحبا ${userName}</h2>
-          <p>شكرًا لتسجيلك في المنصة القانونية الجزائرية.</p>
-          <p>يرجى الضغط على الزر التالي لتفعيل حسابك:</p>
-          <a href="${verificationLink}" style="display: inline-block; margin: 16px 0; padding: 12px 20px; background: #1e3a5f; color: #ffffff; border-radius: 12px; text-decoration: none;">تفعيل الحساب</a>
-          <p style="margin-top: 16px; color: #4a5568;">إذا لم تكن أنت من طلب هذا التسجيل، فتجاهل هذه الرسالة.</p>
-          <p style="margin-top: 16px; color: #4a5568; font-size: 12px;">إذا كان الرابط لا يعمل، انسخ الرابط التالي والصقه في المتصفح:</p>
-          <p style="word-break: break-all; color: #2d3748;">${verificationLink}</p>
-        </div>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
-    return true;
-  } catch (error) {
-    console.error("Error sending email:", error);
-    return false;
-  }
-}
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
