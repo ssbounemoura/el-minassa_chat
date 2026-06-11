@@ -8,5 +8,8 @@
     "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
+  ]
 }
