@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Scale, Eye, EyeOff, Gavel, FileText, ShieldCheck, Check, User, Mail, Phone, Building2, Lock, Hash, ArrowRight, CheckCircle, AlertCircle } from "lucide-react";
+import { FieldCheck } from "@/components/FieldCheck";
 
 const professions = [
   { value: "AVOCAT", label: "محامي", desc: "إدارة القضايا والمرافعات", Icon: Gavel },
@@ -91,6 +92,8 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [useCustomCourt, setUseCustomCourt] = useState(false);
+  const [emailValid, setEmailValid] = useState(false);
+  const [phoneValid, setPhoneValid] = useState(false);
   const [form, setForm] = useState({
     name: "", email: "", password: "", confirmPassword: "",
     role: "AVOCAT", phone: "", officeName: "", wilaya: "",
@@ -124,6 +127,16 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    
+    if (!emailValid) {
+      setError("البريد الإلكتروني غير متاح أو غير صحيح");
+      return;
+    }
+
+    if (form.phone && !phoneValid) {
+      setError("رقم الهاتف غير متاح أو غير صحيح");
+      return;
+    }
     
     if (!termsAccepted) {
       setError("يجب عليك قبول شروط الخدمة والسياسات");
@@ -328,6 +341,7 @@ export default function RegisterPage() {
                       <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light" />
                       <input type="tel" className="input-field text-sm pr-10" dir="ltr" value={form.phone} onChange={(e) => updateForm("phone", e.target.value)} placeholder="0555XXXXXX" />
                     </div>
+                    <FieldCheck type="phone" value={form.phone} onCheck={setPhoneValid} />
                   </div>
                 </div>
                 <div className="mt-3">
@@ -336,6 +350,7 @@ export default function RegisterPage() {
                     <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light" />
                     <input type="email" className="input-field text-sm pr-10" dir="ltr" value={form.email} onChange={(e) => updateForm("email", e.target.value)} required placeholder="example@email.com" />
                   </div>
+                  <FieldCheck type="email" value={form.email} onCheck={setEmailValid} />
                 </div>
               </div>
 
