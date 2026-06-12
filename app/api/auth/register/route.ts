@@ -5,19 +5,40 @@ import crypto from "crypto";
 import nodemailer from 'nodemailer';
 
 // Configuration SMTP avec Octenium
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-});
+let transporter: nodemailer.Transporter | null = null;
+
+try {
+  // Vérifier que les variables SMTP sont définies
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    console.warn("⚠️ SMTP variables manquantes. L'envoi d'emails sera désactivé.");
+  } else {
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true', // false pour port 587, true pour 465
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+    
+    // Vérifier la connexion SMTP
+    await transporter.verify();
+    console.log("✅ SMTP configuré avec succès");
+  }
+} catch (smtpError) {
+  console.error("❌ Erreur de configuration SMTP:", smtpError);
+}
 
 // Fonction pour envoyer l'email de vérification
 async function sendVerificationEmail(email: string, token: string, name: string) {
-  const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
+  if (!transporter) {
+    console.warn("⚠️ Email non envoyé: SMTP non configuré");
+    return false;
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "http://localhost:3000";
+  const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
   
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right;">
@@ -32,12 +53,19 @@ async function sendVerificationEmail(email: string, token: string, name: string)
     </div>
   `;
 
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
-    to: email,
-    subject: "تفعيل حسابك - El Minassa Chat",
-    html: htmlContent,
-  });
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+      to: email,
+      subject: "تفعيل حسابك - El Minassa Chat",
+      html: htmlContent,
+    });
+    console.log(`✅ Email de vérification envoyé à ${email}`);
+    return true;
+  } catch (emailError) {
+    console.error("❌ Erreur d'envoi d'email:", emailError);
+    return false;
+  }
 }
 
 export async function POST(request: Request) {
@@ -106,15 +134,29 @@ export async function POST(request: Request) {
       });
     }
 
-    // Send verification email
-    await sendVerificationEmail(email, verificationToken, name);
+    // Send verification email (non bloquant)
+    let emailSent = false;
+    try {
+      emailSent = await sendVerificationEmail(email, verificationToken, name);
+    } catch (emailError) {
+      console.error("Erreur lors de l'envoi d'email:", emailError);
+    }
 
+    // L'inscription réussit même si l'email échoue
     return NextResponse.json({
-      message: "تم إنشاء الحساب بنجاح. يرجى تفعيل بريدك الإلكتروني",
+      message: emailSent 
+        ? "تم إنشاء الحساب بنجاح. يرجى تفعيل بريدك الإلكتروني"
+        : "تم إنشاء الحساب بنجاح. لم نتمكن من إرسال بريد التفعيل، يرجى الاتصال بالدعم",
       email: user.email,
+      emailSent: emailSent,
     }, { status: 201 });
+    
   } catch (error) {
     console.error("Register error:", error);
-    return NextResponse.json({ message: "خطأ في الخادم" }, { status: 500 });
+    // Retourner plus de détails sur l'erreur (en développement seulement)
+    const errorMessage = process.env.NODE_ENV === "development" 
+      ? (error as Error).message 
+      : "خطأ في الخادم";
+    return NextResponse.json({ message: errorMessage }, { status: 500 });
   }
 }
