@@ -2,7 +2,43 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { sendVerificationEmail } from "@/lib/email";
+import nodemailer from 'nodemailer';
+
+// Configuration SMTP avec Octenium
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD,
+  },
+});
+
+// Fonction pour envoyer l'email de vérification
+async function sendVerificationEmail(email: string, token: string, name: string) {
+  const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
+  
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right;">
+      <h2>مرحباً ${name}،</h2>
+      <p>شكراً لتسجيلك في المنصة. يرجى تفعيل بريدك الإلكتروني بالنقر على الرابط أدناه:</p>
+      <p><a href="${verificationUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">تفعيل الحساب</a></p>
+      <p>أو انسخ هذا الرابط في متصفحك:</p>
+      <p>${verificationUrl}</p>
+      <p>هذا الرابط صالح لمدة 24 ساعة.</p>
+      <hr />
+      <p style="font-size: 12px; color: #666;">Ceci est un message automatique, merci de ne pas y répondre.</p>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: "تفعيل حسابك - El Minassa Chat",
+    html: htmlContent,
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -82,4 +118,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "خطأ في الخادم" }, { status: 500 });
   }
 }
-

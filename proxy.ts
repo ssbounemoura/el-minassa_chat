@@ -13,7 +13,7 @@ const allowedRoutes = [
   "/robots.txt",
 ];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const authRole = req.cookies.get(authCookieName)?.value;
   const isAdmin = authRole === "SUPER_ADMIN";
