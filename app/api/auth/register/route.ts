@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import nodemailer from 'nodemailer';
+import { getVerificationEmailTemplate } from "@/lib/email-templates";
 
 // Configuration SMTP avec Octenium
 let transporter: nodemailer.Transporter | null = null;
@@ -30,7 +31,7 @@ try {
   console.error("❌ Erreur de configuration SMTP:", smtpError);
 }
 
-// Fonction pour envoyer l'email de vérification
+// Fonction pour envoyer l'email de vérification avec template professionnel
 async function sendVerificationEmail(email: string, token: string, name: string) {
   if (!transporter) {
     console.warn("⚠️ Email non envoyé: SMTP non configuré");
@@ -38,26 +39,20 @@ async function sendVerificationEmail(email: string, token: string, name: string)
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "http://localhost:3000";
-  const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
   
-  const htmlContent = `
-    <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right;">
-      <h2>مرحباً ${name}،</h2>
-      <p>شكراً لتسجيلك في المنصة. يرجى تفعيل بريدك الإلكتروني بالنقر على الرابط أدناه:</p>
-      <p><a href="${verificationUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">تفعيل الحساب</a></p>
-      <p>أو انسخ هذا الرابط في متصفحك:</p>
-      <p>${verificationUrl}</p>
-      <p>هذا الرابط صالح لمدة 24 ساعة.</p>
-      <hr />
-      <p style="font-size: 12px; color: #666;">Ceci est un message automatique, merci de ne pas y répondre.</p>
-    </div>
-  `;
+  // Utilisation du template professionnel
+  const htmlContent = getVerificationEmailTemplate({
+    name,
+    email,
+    token,
+    baseUrl,
+  });
 
   try {
     await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.SMTP_USER,
       to: email,
-      subject: "تفعيل حسابك - El Minassa Chat",
+      subject: "تفعيل حسابك - المنصة القانونية الجزائرية",
       html: htmlContent,
     });
     console.log(`✅ Email de vérification envoyé à ${email}`);
