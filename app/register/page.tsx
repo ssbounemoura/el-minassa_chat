@@ -321,7 +321,7 @@ export default function RegisterPage() {
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
               {/* Section: Personal info */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -333,13 +333,13 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-text-light mb-1.5">الاسم الكامل <span className="text-danger">*</span></label>
-                    <input type="text" className="input-field text-sm" value={form.name} onChange={(e) => updateForm("name", e.target.value)} required placeholder="الأستاذ..." />
+                    <input type="text" className="input-field text-sm" value={form.name} onChange={(e) => updateForm("name", e.target.value)} required placeholder="الأستاذ..." autoComplete="off" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-text-light mb-1.5">رقم الهاتف</label>
                     <div className="relative">
                       <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light" />
-                      <input type="tel" className="input-field text-sm pr-10" dir="ltr" value={form.phone} onChange={(e) => updateForm("phone", e.target.value)} placeholder="0555XXXXXX" />
+                      <input type="tel" className="input-field text-sm pr-10" dir="ltr" value={form.phone} onChange={(e) => updateForm("phone", e.target.value)} placeholder="0555XXXXXX" autoComplete="off" />
                     </div>
                     <FieldCheck type="phone" value={form.phone} onCheck={setPhoneValid} />
                   </div>
@@ -348,7 +348,7 @@ export default function RegisterPage() {
                   <label className="block text-xs font-medium text-text-light mb-1.5">البريد الإلكتروني <span className="text-danger">*</span></label>
                   <div className="relative">
                     <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light" />
-                    <input type="email" className="input-field text-sm pr-10" dir="ltr" value={form.email} onChange={(e) => updateForm("email", e.target.value)} required placeholder="example@email.com" />
+                    <input type="email" className="input-field text-sm pr-10" dir="ltr" value={form.email} onChange={(e) => updateForm("email", e.target.value)} required placeholder="example@email.com" autoComplete="off" />
                   </div>
                   <FieldCheck type="email" value={form.email} onCheck={setEmailValid} />
                 </div>
@@ -415,6 +415,7 @@ export default function RegisterPage() {
                           onChange={(e) => updateForm("manualWilaya", e.target.value)}
                           placeholder="اكتب اسم المحكمة هنا..."
                           required={useCustomCourt}
+                          autoComplete="off"
                         />
                       </div>
                     )}
@@ -423,7 +424,7 @@ export default function RegisterPage() {
                     <label className="block text-xs font-medium text-text-light mb-1.5">اسم المكتب</label>
                     <div className="relative">
                       <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light" />
-                      <input type="text" className="input-field text-sm pr-10" value={form.officeName} onChange={(e) => updateForm("officeName", e.target.value)} placeholder="مكتب الأستاذ..." />
+                      <input type="text" className="input-field text-sm pr-10" value={form.officeName} onChange={(e) => updateForm("officeName", e.target.value)} placeholder="مكتب الأستاذ..." autoComplete="off" />
                     </div>
                   </div>
                 </div>
@@ -448,6 +449,7 @@ export default function RegisterPage() {
                       onChange={(e) => updateForm(registrationNumberField.field, e.target.value)}
                       placeholder={registrationNumberField.placeholder}
                       required
+                      autoComplete="off"
                     />
                   </div>
                 </div>
@@ -466,7 +468,7 @@ export default function RegisterPage() {
                     <label className="block text-xs font-medium text-text-light mb-1.5">كلمة المرور <span className="text-danger">*</span></label>
                     <div className="relative">
                       <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light" />
-                      <input type={showPass ? "text" : "password"} className="input-field text-sm pr-10 pl-10" dir="ltr" value={form.password} onChange={(e) => updateForm("password", e.target.value)} required minLength={8} placeholder="8 أحرف على الأقل" />
+                      <input type={showPass ? "text" : "password"} className="input-field text-sm pr-10 pl-10" dir="ltr" value={form.password} onChange={(e) => updateForm("password", e.target.value)} required minLength={8} placeholder="8 أحرف على الأقل" autoComplete="new-password" />
                       <button type="button" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light hover:text-primary transition-colors" onClick={() => setShowPass(!showPass)}>
                         {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -476,7 +478,7 @@ export default function RegisterPage() {
                     <label className="block text-xs font-medium text-text-light mb-1.5">تأكيد كلمة المرور <span className="text-danger">*</span></label>
                     <div className="relative">
                       <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light" />
-                      <input type="password" className="input-field text-sm pr-10" dir="ltr" value={form.confirmPassword} onChange={(e) => updateForm("confirmPassword", e.target.value)} required placeholder="أعد كتابة كلمة المرور" />
+                      <input type="password" className="input-field text-sm pr-10" dir="ltr" value={form.confirmPassword} onChange={(e) => updateForm("confirmPassword", e.target.value)} required placeholder="أعد كتابة كلمة المرور" autoComplete="new-password" />
                     </div>
                   </div>
                 </div>
