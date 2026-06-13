@@ -1,23 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { prisma } from "@/lib/prisma";
+import Pusher from "pusher";
 
-const prisma = new PrismaClient();
+// Initialiser Pusher
+const pusherServer = new Pusher({
+  appId: process.env.PUSHER_APP_ID!,
+  key: process.env.NEXT_PUBLIC_PUSHER_KEY!,
+  secret: process.env.PUSHER_SECRET!,
+  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+  useTLS: true,
+});
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = req.cookies.get("authUserId")?.value;
-    if (!userId) return NextResponse.json({ error: "مستخدم غير موجود" }, { status: 401 });
+    // Utiliser NextAuth session au lieu du cookie
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "مستخدم غير موجود" }, { status: 404 });
+    }
 
     const conversationId = req.nextUrl.searchParams.get("conversationId");
-    if (!conversationId) return NextResponse.json({ error: "conversationId مطلوب" }, { status: 400 });
+    if (!conversationId) {
+      return NextResponse.json({ error: "conversationId مطلوب" }, { status: 400 });
+    }
 
-    // Verify the user is a participant
-    const participant = await prisma.conversationParticipant.findFirst({ where: { conversationId, userId } });
-    if (!participant) return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    // Vérifier que l'utilisateur est participant
+    const participant = await prisma.conversationParticipant.findFirst({
+      where: { conversationId, userId: user.id },
+    });
+    
+    if (!participant) {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    }
 
-    const messages = await prisma.message.findMany({ where: { conversationId }, orderBy: { createdAt: "asc" }, include: { sender: { select: { id: true, name: true } } } });
+    const messages = await prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: "asc" },
+      include: { sender: { select: { id: true, name: true, role: true } } },
+    });
 
-    return NextResponse.json({ messages: messages.map((m) => ({ id: m.id, senderId: m.senderId, sender: m.sender.name, content: m.content, time: m.createdAt })) });
+    return NextResponse.json({
+      messages: messages.map((m) => ({
+        id: m.id,
+        senderId: m.senderId,
+        senderName: m.sender.name,
+        senderRole: m.sender.role,
+        content: m.content,
+        time: m.createdAt,
+        isMe: m.senderId === user.id,
+        read: !!m.readAt,
+      })),
+    });
   } catch (error) {
     console.error("Get messages error:", error);
     return NextResponse.json({ error: "خطأ في تحميل الرسائل" }, { status: 500 });
@@ -26,19 +68,79 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = req.cookies.get("authUserId")?.value;
-    if (!userId) return NextResponse.json({ error: "مستخدم غير موجود" }, { status: 401 });
+    // Utiliser NextAuth session
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "مستخدم غير موجود" }, { status: 404 });
+    }
 
     const { conversationId, content } = await req.json();
-    if (!conversationId || !content) return NextResponse.json({ error: "conversationId و content مطلوبان" }, { status: 400 });
+    if (!conversationId || !content) {
+      return NextResponse.json({ error: "conversationId و content مطلوبان" }, { status: 400 });
+    }
 
-    // Verify the user is a participant
-    const participant = await prisma.conversationParticipant.findFirst({ where: { conversationId, userId } });
-    if (!participant) return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    // Vérifier que l'utilisateur est participant
+    const participant = await prisma.conversationParticipant.findFirst({
+      where: { conversationId, userId: user.id },
+    });
+    
+    if (!participant) {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    }
 
-    const created = await prisma.message.create({ data: { conversationId, senderId: userId, content } });
+    // Créer le message
+    const created = await prisma.message.create({
+      data: {
+        conversationId,
+        senderId: user.id,
+        content,
+      },
+      include: {
+        sender: { select: { id: true, name: true, role: true } },
+      },
+    });
 
-    return NextResponse.json({ message: { id: created.id, senderId: created.senderId, content: created.content, time: created.createdAt } });
+    // Récupérer tous les participants de la conversation
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        participants: true,
+      },
+    });
+
+    // Envoyer le message en temps réel via Pusher à tous les participants
+    const messageData = {
+      id: created.id,
+      conversationId,
+      senderId: user.id,
+      senderName: user.name,
+      senderRole: user.role,
+      content,
+      time: created.createdAt,
+    };
+
+    for (const p of conversation?.participants || []) {
+      await pusherServer.trigger(`private-user-${p.userId}`, "new-message", messageData);
+    }
+
+    return NextResponse.json({
+      message: {
+        id: created.id,
+        senderId: created.senderId,
+        senderName: user.name,
+        content: created.content,
+        time: created.createdAt,
+        isMe: true,
+      },
+    });
   } catch (error) {
     console.error("Create message error:", error);
     return NextResponse.json({ error: "خطأ في ارسال الرسالة" }, { status: 500 });

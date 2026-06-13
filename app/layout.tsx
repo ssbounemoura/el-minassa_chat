@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import "./globals.css";
+import CookieConsent from "@/components/CookieConsent";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" className={cairo.variable}>
       <body className="font-[family-name:var(--font-cairo)] antialiased" suppressHydrationWarning>
         {children}
+        <CookieConsent />
       </body>
     </html>
   );

@@ -7,11 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Role values: SUPER_ADMIN, AVOCAT, NOTAIRE, HUISSIER
-// DossierStatus values: EN_COURS, EN_ATTENTE, TERMINE, ANNULE, ARCHIVE
-// InvoiceStatus values: BROUILLON, ENVOYEE, PAYEE, EN_RETARD, ANNULEE
-// MessageType values: ADMIN_SUPPORT, PROFESSION_GROUP
-
+// ============================================
+// MODÈLE USER (défini en premier)
+// ============================================
 model User {
   id                            String                    @id @default(cuid())
   name                          String
@@ -26,11 +24,13 @@ model User {
   emailVerificationToken        String?
   emailVerificationTokenExpiry  DateTime?
   wilayaId                      String?
-  wilaya                        Wilaya?                   @relation(fields: [wilayaId], references: [id])
   customWilaya                  String?
-  subscription                  Subscription?
   createdAt                     DateTime                  @default(now())
   updatedAt                     DateTime                  @updatedAt
+  
+  // Relations
+  wilaya                        Wilaya?                   @relation(fields: [wilayaId], references: [id])
+  subscription                  Subscription?
   dossiers                      Dossier[]
   clients                       Client[]
   rendezVous                    RendezVous[]
@@ -38,13 +38,16 @@ model User {
   factures                      Facture[]
   notifications                 Notification[]
   sentMessages                  Message[]                 @relation("SentMessages")
-  conversations                 ConversationParticipant[]
+  conversationParticipants      ConversationParticipant[]
   chatSessions                  ChatSession[]
   aiConversations               AiConversation[]
 
   @@map("users")
 }
 
+// ============================================
+// MODÈLE WILAYA
+// ============================================
 model Wilaya {
   id    String @id @default(cuid())
   code  String @unique
@@ -54,6 +57,54 @@ model Wilaya {
   @@map("wilayas")
 }
 
+// ============================================
+// MODÈLES POUR LE CHAT
+// ============================================
+model Conversation {
+  id           String                     @id @default(cuid())
+  type         String                     // "private", "group", "profession"
+  title        String?
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([updatedAt])
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime?
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  attachmentUrl  String?
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
+}
+
+// ============================================
+// MODÈLE PLAN
+// ============================================
 model Plan {
   id           String         @id @default(cuid())
   name         String
@@ -69,6 +120,9 @@ model Plan {
   @@map("plans")
 }
 
+// ============================================
+// MODÈLE SUBSCRIPTION
+// ============================================
 model Subscription {
   id         String     @id @default(cuid())
   userId     String     @unique
@@ -84,6 +138,9 @@ model Subscription {
   @@map("subscriptions")
 }
 
+// ============================================
+// MODÈLE CLIENT
+// ============================================
 model Client {
   id         String    @id @default(cuid())
   userId     String
@@ -101,6 +158,9 @@ model Client {
   @@map("clients")
 }
 
+// ============================================
+// MODÈLE DOSSIER
+// ============================================
 model Dossier {
   id          String      @id @default(cuid())
   userId      String
@@ -125,6 +185,9 @@ model Dossier {
   @@map("dossiers")
 }
 
+// ============================================
+// MODÈLE RENDEZ-VOUS
+// ============================================
 model RendezVous {
   id          String    @id @default(cuid())
   userId      String
@@ -142,6 +205,9 @@ model RendezVous {
   @@map("rendez_vous")
 }
 
+// ============================================
+// MODÈLE DOCUMENT
+// ============================================
 model Document {
   id        String    @id @default(cuid())
   userId    String
@@ -157,6 +223,9 @@ model Document {
   @@map("documents")
 }
 
+// ============================================
+// MODÈLE FACTURE
+// ============================================
 model Facture {
   id             String    @id @default(cuid())
   userId         String
@@ -173,6 +242,9 @@ model Facture {
   @@map("factures")
 }
 
+// ============================================
+// MODÈLE PAIEMENT
+// ============================================
 model Paiement {
   id             String        @id @default(cuid())
   factureId      String?
@@ -187,44 +259,9 @@ model Paiement {
   @@map("paiements")
 }
 
-model Conversation {
-  id           String                     @id @default(cuid())
-  type         String
-  title        String?
-  createdAt    DateTime                   @default(now())
-  updatedAt    DateTime                   @updatedAt
-  participants ConversationParticipant[]
-  messages     Message[]
-
-  @@map("conversations")
-}
-
-model ConversationParticipant {
-  id             String       @id @default(cuid())
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  userId         String
-  user           User         @relation(fields: [userId], references: [id])
-  lastReadAt     DateTime?
-
-  @@unique([conversationId, userId])
-  @@map("conversation_participants")
-}
-
-model Message {
-  id             String       @id @default(cuid())
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  senderId       String
-  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
-  content        String
-  attachmentUrl  String?
-  isRead         Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-
-  @@map("messages")
-}
-
+// ============================================
+// MODÈLE NOTIFICATION
+// ============================================
 model Notification {
   id          String    @id @default(cuid())
   userId      String
@@ -242,6 +279,9 @@ model Notification {
   @@map("notifications")
 }
 
+// ============================================
+// MODÈLE CHAT SESSION (visiteur)
+// ============================================
 model ChatSession {
   id        String   @id @default(cuid())
   visitorId String
@@ -254,6 +294,9 @@ model ChatSession {
   @@map("chat_sessions")
 }
 
+// ============================================
+// MODÈLE AI CONVERSATION
+// ============================================
 model AiConversation {
   id        String   @id @default(cuid())
   userId    String
@@ -266,6 +309,9 @@ model AiConversation {
   @@map("ai_conversations")
 }
 
+// ============================================
+// MODÈLE LEGAL TEXT
+// ============================================
 model LegalText {
   id            String   @id @default(cuid())
   category      String

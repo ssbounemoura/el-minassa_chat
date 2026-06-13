@@ -92,29 +92,40 @@ const testimonials = [
 ];
 
 export default function LandingPage() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(true); // Commence à true
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
+    const shouldShowSplash = !sessionStorage.getItem("splash-shown");
+    setShowSplash(shouldShowSplash);
     
-    const splashSeen = sessionStorage.getItem("splash-shown");
-    
-    if (splashSeen) {
-      setShowSplash(false);
-    } else {
+    // Si le splash doit être affiché, on le montre pendant 2 secondes
+    if (shouldShowSplash) {
       const timer = setTimeout(() => {
         setShowSplash(false);
-        sessionStorage.setItem("splash-shown", "true");
-      }, 2500);
+        try { sessionStorage.setItem("splash-shown", "true"); } catch {}
+      }, 2500); // 2.5 secondes
       
       return () => clearTimeout(timer);
+    } else {
+      // Si pas de splash, on cache immédiatement
+      setShowSplash(false);
     }
   }, []);
 
-  // Pendant le splash, ne rien afficher d'autre
+  const handleSplashComplete = useCallback(() => {
+    setShowSplash(false);
+    try { sessionStorage.setItem("splash-shown", "true"); } catch {}
+  }, []);
+
+  // Pendant le montage ou si le splash est visible, on montre uniquement le splash
   if (!isMounted || showSplash) {
-    return <>{isMounted && showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}</>;
+    return (
+      <>
+        {isMounted && showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+      </>
+    );
   }
 
   return (
@@ -145,7 +156,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Bannière offre de lancement */}
+      {/* ========== BANNIÈRE OFFRE DE LANCEMENT (50%) ========== */}
       <Link href="/special-offer" className="block">
         <div className="bg-gradient-to-r from-red-600 via-amber-500 to-red-600 text-white overflow-hidden relative group cursor-pointer">
           <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
@@ -167,7 +178,7 @@ export default function LandingPage() {
         </div>
       </Link>
 
-      {/* Bandeau nouveauté */}
+      {/* ========== BANDEAU NOUVEAUTÉ (Portail) ========== */}
       <section className="bg-gradient-to-r from-amber-50 to-primary/5 border-b border-amber-200">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
@@ -196,14 +207,14 @@ export default function LandingPage() {
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10">
           <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 animate-hero-heading">
               إدارة مكتبك القانوني <span className="text-secondary">بذكاء واحترافية</span>
             </h1>
-            <p className="text-xl text-gray-200 mb-8 leading-relaxed">
+            <p className="text-xl text-gray-200 mb-8 leading-relaxed animate-hero-text">
               منصة متكاملة مصممة خصيصاً للمحامين والموثقين والمحضرين القضائيين في الجزائر.
               أدِر ملفاتك، عملاءك، ومراسلاتك من مكان واحد مع ذكاء اصطناعي قانوني متقدم.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 animate-hero-buttons">
               <Link href="/register" className="btn-secondary text-lg px-8 py-3 flex items-center gap-2">
                 ابدأ مجاناً الآن
                 <ChevronLeft className="w-5 h-5" />
@@ -212,7 +223,7 @@ export default function LandingPage() {
                 اكتشف المميزات
               </a>
             </div>
-            <div className="mt-8 flex items-center gap-6 text-sm text-gray-300">
+            <div className="mt-8 flex items-center gap-6 text-sm text-gray-300 animate-hero-badges">
               <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-secondary" /> تجربة مجانية 30 يوم</span>
               <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-secondary" /> بدون بطاقة بنكية</span>
               <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-secondary" /> دعم فني متواصل</span>
@@ -221,7 +232,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Section Services Vedettes */}
+      {/* ========== SECTION SERVICES VEDETTES ========== */}
       <section className="py-16 bg-gray-50" dir="rtl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
