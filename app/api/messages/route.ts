@@ -12,9 +12,11 @@ const pusherServer = new Pusher({
   useTLS: true,
 });
 
+// ============================================
+// GET - Récupérer les messages d'une conversation
+// ============================================
 export async function GET(req: NextRequest) {
   try {
-    // Utiliser NextAuth session au lieu du cookie
     const session = await getServerSession();
     if (!session?.user?.email) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest) {
     const participant = await prisma.conversationParticipant.findFirst({
       where: { conversationId, userId: user.id },
     });
-    
+
     if (!participant) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
@@ -66,9 +68,11 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// ============================================
+// POST - Envoyer un nouveau message
+// ============================================
 export async function POST(req: NextRequest) {
   try {
-    // Utiliser NextAuth session
     const session = await getServerSession();
     if (!session?.user?.email) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
@@ -91,7 +95,7 @@ export async function POST(req: NextRequest) {
     const participant = await prisma.conversationParticipant.findFirst({
       where: { conversationId, userId: user.id },
     });
-    
+
     if (!participant) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
     }
