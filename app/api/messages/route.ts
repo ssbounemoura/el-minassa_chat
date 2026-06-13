@@ -1,9 +1,10 @@
+// app/api/messages/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next"; // ✅ IMPORT CORRIGÉ
 import { prisma } from "@/lib/prisma";
 import Pusher from "pusher";
 
-// Initialiser Pusher
+// Initialiser Pusher (maintenant que le package est installé)
 const pusherServer = new Pusher({
   appId: process.env.PUSHER_APP_ID!,
   key: process.env.NEXT_PUBLIC_PUSHER_KEY!,
