@@ -1,15 +1,22 @@
 {
   "buildCommand": "prisma generate && next build",
   "devCommand": "next dev",
-  "installCommand": "npm ci && npx prisma migrate deploy",
+  "installCommand": "npm ci",
   "framework": "nextjs",
   "regions": ["cdg1"],
   "functions": {
-    "src/app/api/**/*.ts": {
+    "app/api/**/*.ts": {
       "maxDuration": 30
     }
   },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+  "crons": [
+    {
+      "path": "/api/cron/check-hearings",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/check-invoices",
+      "schedule": "0 9 * * *"
+    }
   ]
 }
