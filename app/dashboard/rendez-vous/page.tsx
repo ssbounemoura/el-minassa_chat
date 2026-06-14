@@ -5,7 +5,8 @@ import {
   Plus, Calendar as CalIcon, Clock, MapPin, X, CheckCircle2, Edit2, Trash2, 
   Save, AlertCircle, ChevronLeft, ChevronRight, Bell, Repeat, Users, 
   Video, Phone, Briefcase, FileText, Star, CalendarDays, ListChecks,
-  Grid3X3, Filter, Download, Printer, Settings, Share2, Copy, Check
+  Grid3X3, Filter, Download, Printer, Settings, Share2, Copy, Check,
+  Search
 } from "lucide-react";
 
 interface RendezVous {
@@ -65,6 +66,18 @@ const monthNames = [
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
 ];
 
+function Gavel(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m14.5 3.5 4 4" />
+      <path d="m9 9-3.5 3.5L7 14l3.5-3.5L14 14l3.5-3.5L14 7Z" />
+      <path d="M18 2l2 2" />
+      <path d="M4 20l2 2" />
+      <path d="M12 12l-2 2" />
+    </svg>
+  );
+}
+
 export default function RendezVousPage() {
   const [appointments, setAppointments] = useState<RendezVous[]>([]);
   const [dossiers, setDossiers] = useState<Dossier[]>([]);
@@ -74,7 +87,7 @@ export default function RendezVousPage() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<"month" | "week" | "day" | "list">("month");
+  const [view, setView] = useState<"month" | "week" | "day" | "list">("list");
   const [selectedType, setSelectedType] = useState("all");
   const [search, setSearch] = useState("");
   
@@ -256,8 +269,6 @@ export default function RendezVousPage() {
 
     setSaving(true);
     try {
-      const dateTime = new Date(`${form.date}T${form.time}:00`);
-      
       if (editing) {
         const res = await fetch("/api/rendez-vous", {
           method: "PUT",
@@ -342,7 +353,6 @@ export default function RendezVousPage() {
   };
 
   const days = getDaysInMonth(currentDate);
-  const weekDaysNames = weekDays;
 
   if (loading) {
     return (
@@ -442,42 +452,38 @@ export default function RendezVousPage() {
         </div>
       </div>
 
-      {/* Calendar Controls */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <ChevronRight className="w-5 h-5" />
-            </button>
-            <h2 className="text-xl font-bold text-gray-800">
-              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </h2>
-            <button onClick={() => changeMonth(1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button onClick={goToToday} className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-              اليوم
-            </button>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setView("month")} className={`px-4 py-2 rounded-lg text-sm transition-all ${view === "month" ? "bg-primary text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-              <Grid3X3 className="w-4 h-4 inline ml-1" /> شهري
-            </button>
-            <button onClick={() => setView("week")} className={`px-4 py-2 rounded-lg text-sm transition-all ${view === "week" ? "bg-primary text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-              <ListChecks className="w-4 h-4 inline ml-1" /> أسبوعي
-            </button>
-            <button onClick={() => setView("list")} className={`px-4 py-2 rounded-lg text-sm transition-all ${view === "list" ? "bg-primary text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-              <ListChecks className="w-4 h-4 inline ml-1" /> قائمة
-            </button>
+      {/* Calendar Controls - Vue mois uniquement pour l'affichage calendrier */}
+      {view === "month" && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <h2 className="text-xl font-bold text-gray-800">
+                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+              </h2>
+              <button onClick={() => changeMonth(1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button onClick={goToToday} className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                اليوم
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setView("list")} className={`px-4 py-2 rounded-lg text-sm transition-all ${view === "list" ? "bg-primary text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+                <ListChecks className="w-4 h-4 inline ml-1" /> قائمة
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Month View */}
+      {/* Month View Calendar */}
       {view === "month" && (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
           <div className="grid grid-cols-7 border-b">
-            {weekDaysNames.map((day, idx) => (
+            {weekDays.map((day, idx) => (
               <div key={idx} className="p-3 text-center font-semibold text-gray-600 border-l">
                 {day.name}
               </div>
@@ -533,8 +539,8 @@ export default function RendezVousPage() {
         </div>
       )}
 
-      {/* List View - Modern Cards */}
-      {view === "list" && (
+      {/* List View - Modern Cards (toujours visible si view n'est pas month) */}
+      {(view === "list" || view !== "month") && (
         <div className="space-y-4">
           {/* Filters */}
           <div className="flex flex-wrap gap-3 items-center">
@@ -903,18 +909,5 @@ export default function RendezVousPage() {
         </div>
       )}
     </div>
-  );
-}
-
-// Icône Gavel
-function Gavel(props: any) {
-  return (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m14.5 3.5 4 4" />
-      <path d="m9 9-3.5 3.5L7 14l3.5-3.5L14 14l3.5-3.5L14 7Z" />
-      <path d="M18 2l2 2" />
-      <path d="M4 20l2 2" />
-      <path d="M12 12l-2 2" />
-    </svg>
   );
 }
