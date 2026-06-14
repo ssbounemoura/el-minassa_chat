@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, Edit2, Trash2, X, Eye, Filter, FolderOpen, Calendar, Building2, Gavel, Save, CheckCircle, AlertCircle } from "lucide-react";
+import { 
+  Plus, Search, Edit2, Trash2, X, Eye, Filter, FolderOpen, Calendar, 
+  Building2, Gavel, Save, CheckCircle, AlertCircle, User
+} from "lucide-react";
 
 interface Client {
   id: string;
@@ -62,7 +65,7 @@ export default function DossiersPage() {
     description: "" 
   });
 
-  const showToast = (message: string, type: "success" | "error") => {
+  const showToastMessage = (message: string, type: "success" | "error") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
@@ -76,7 +79,7 @@ export default function DossiersPage() {
       }
     } catch (error) {
       console.error("Erreur chargement dossiers:", error);
-      showToast("خطأ في تحميل الملفات", "error");
+      showToastMessage("خطأ في تحميل الملفات", "error");
     } finally {
       setLoading(false);
     }
@@ -129,7 +132,7 @@ export default function DossiersPage() {
 
   const handleSave = async () => {
     if (!form.title) {
-      showToast("الرجاء إدخال عنوان الملف", "error");
+      showToastMessage("الرجاء إدخال عنوان الملف", "error");
       return;
     }
 
@@ -142,10 +145,10 @@ export default function DossiersPage() {
           body: JSON.stringify({ id: editing.id, ...form }),
         });
         if (res.ok) {
-          showToast("✅ تم تعديل الملف بنجاح", "success");
+          showToastMessage("✅ تم تعديل الملف بنجاح", "success");
           await loadDossiers();
         } else {
-          showToast("❌ خطأ في تعديل الملف", "error");
+          showToastMessage("❌ خطأ في تعديل الملف", "error");
         }
       } else {
         const res = await fetch("/api/dossiers", {
@@ -154,16 +157,16 @@ export default function DossiersPage() {
           body: JSON.stringify(form),
         });
         if (res.ok) {
-          showToast("✅ تم إضافة الملف بنجاح", "success");
+          showToastMessage("✅ تم إضافة الملف بنجاح", "success");
           await loadDossiers();
         } else {
-          showToast("❌ خطأ في إضافة الملف", "error");
+          showToastMessage("❌ خطأ في إضافة الملف", "error");
         }
       }
       setShowModal(false);
     } catch (error) {
       console.error("Erreur sauvegarde dossier:", error);
-      showToast("❌ خطأ في الاتصال بالخادم", "error");
+      showToastMessage("❌ خطأ في الاتصال بالخادم", "error");
     } finally {
       setSaving(false);
     }
@@ -174,14 +177,14 @@ export default function DossiersPage() {
       try {
         const res = await fetch(`/api/dossiers?id=${id}`, { method: "DELETE" });
         if (res.ok) {
-          showToast("✅ تم حذف الملف بنجاح", "success");
+          showToastMessage("✅ تم حذف الملف بنجاح", "success");
           await loadDossiers();
         } else {
-          showToast("❌ خطأ في حذف الملف", "error");
+          showToastMessage("❌ خطأ في حذف الملف", "error");
         }
       } catch (error) {
         console.error("Erreur suppression dossier:", error);
-        showToast("❌ خطأ في الاتصال بالخادم", "error");
+        showToastMessage("❌ خطأ في الاتصال بالخادم", "error");
       }
     }
   };
@@ -209,7 +212,7 @@ export default function DossiersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6 bg-gradient-to-br from-gray-50 to-white min-h-screen">
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-20 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-5 duration-300 ${
@@ -287,8 +290,8 @@ export default function DossiersPage() {
                         + إضافة ملف جديد
                       </button>
                     </div>
-                   </td>
-                 </tr>
+                    </td>
+                  </tr>
               ) : (
                 filtered.map((d) => (
                   <tr key={d.id} className="hover:bg-gray-50 transition-colors border-b">
@@ -313,18 +316,10 @@ export default function DossiersPage() {
                     </td>
                     <td className="table-cell text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button 
-                          onClick={() => openEdit(d)} 
-                          className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
-                          title="تعديل"
-                        >
+                        <button onClick={() => openEdit(d)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors" title="تعديل">
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={() => handleDelete(d.id)} 
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
-                          title="حذف"
-                        >
+                        <button onClick={() => handleDelete(d.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 transition-colors" title="حذف">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -351,10 +346,7 @@ export default function DossiersPage() {
                   {editing ? "تعديل معلومات الملف القضائي" : "إضافة ملف قضائي جديد"}
                 </p>
               </div>
-              <button 
-                onClick={() => setShowModal(false)} 
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              >
+              <button onClick={() => setShowModal(false)} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -481,18 +473,10 @@ export default function DossiersPage() {
 
             {/* Footer */}
             <div className="flex items-center justify-end gap-3 p-5 border-t sticky bottom-0 bg-white">
-              <button 
-                onClick={() => setShowModal(false)} 
-                className="btn-outline text-sm px-6 py-2 rounded-lg"
-                disabled={saving}
-              >
+              <button onClick={() => setShowModal(false)} className="btn-outline text-sm px-6 py-2 rounded-lg" disabled={saving}>
                 إلغاء
               </button>
-              <button 
-                onClick={handleSave} 
-                className="btn-primary text-sm px-6 py-2 rounded-lg flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
-                disabled={saving}
-              >
+              <button onClick={handleSave} className="btn-primary text-sm px-6 py-2 rounded-lg flex items-center gap-2 shadow-md hover:shadow-lg transition-all" disabled={saving}>
                 {saving ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
