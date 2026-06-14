@@ -1,44 +1,24 @@
+// app/api/messages/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { headers } from "next/headers";
-
-// Helper pour récupérer l'utilisateur via le token
-async function getCurrentUser(req: NextRequest) {
-  try {
-    // Récupérer le token depuis le header Authorization
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return null;
-    }
-    
-    const token = authHeader.substring(7);
-    
-    // Décoder le token JWT (simplifié - à adapter avec next-auth)
-    // Pour l'instant, on utilise le cookie de session
-    const cookieHeader = req.headers.get("cookie");
-    if (!cookieHeader) return null;
-    
-    // Extraire l'email du cookie session (approche simplifiée)
-    // Dans votre implémentation, utilisez la session NextAuth correctement
-    
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 // ============================================
 // GET - Récupérer les messages d'une conversation
 // ============================================
 export async function GET(req: NextRequest) {
   try {
-    // Alternative : utiliser le cookie authUserId
-    const cookieHeader = req.headers.get("cookie");
-    const authCookie = cookieHeader?.match(/authUserId=([^;]+)/);
-    const userId = authCookie ? authCookie[1] : null;
-    
-    if (!userId) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "مستخدم غير موجود" }, { status: 404 });
     }
 
     const conversationId = req.nextUrl.searchParams.get("conversationId");
@@ -48,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     // Vérifier que l'utilisateur est participant
     const participant = await prisma.conversationParticipant.findFirst({
-      where: { conversationId, userId },
+      where: { conversationId, userId: user.id },
     });
 
     if (!participant) {
@@ -69,7 +49,7 @@ export async function GET(req: NextRequest) {
         senderRole: m.sender.role,
         content: m.content,
         time: m.createdAt,
-        isMe: m.senderId === userId,
+        isMe: m.senderId === user.id,
         read: !!m.readAt,
       })),
     });
@@ -84,12 +64,17 @@ export async function GET(req: NextRequest) {
 // ============================================
 export async function POST(req: NextRequest) {
   try {
-    const cookieHeader = req.headers.get("cookie");
-    const authCookie = cookieHeader?.match(/authUserId=([^;]+)/);
-    const userId = authCookie ? authCookie[1] : null;
-    
-    if (!userId) {
+    const session = await auth();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "مستخدم غير موجود" }, { status: 404 });
     }
 
     const { conversationId, content } = await req.json();
@@ -99,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     // Vérifier que l'utilisateur est participant
     const participant = await prisma.conversationParticipant.findFirst({
-      where: { conversationId, userId },
+      where: { conversationId, userId: user.id },
     });
 
     if (!participant) {
@@ -110,7 +95,7 @@ export async function POST(req: NextRequest) {
     const created = await prisma.message.create({
       data: {
         conversationId,
-        senderId: userId,
+        senderId: user.id,
         content,
       },
       include: {
@@ -122,7 +107,7 @@ export async function POST(req: NextRequest) {
       message: {
         id: created.id,
         senderId: created.senderId,
-        senderName: created.sender.name,
+        senderName: user.name,
         content: created.content,
         time: created.createdAt,
         isMe: true,

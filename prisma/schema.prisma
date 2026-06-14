@@ -224,13 +224,14 @@ model Document {
 }
 
 // ============================================
-// MODÈLE FACTURE
+// MODÈLE FACTURE (CORRIGÉ - AJOUT DU CHAMP client)
 // ============================================
 model Facture {
   id             String    @id @default(cuid())
   userId         String
   user           User      @relation(fields: [userId], references: [id])
   invoiceNumber  String    @unique
+  client         String    // ← AJOUTÉ : nom du client
   amount         Float
   description    String?
   status         String    @default("BROUILLON")

@@ -1,11 +1,14 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const userId = request.cookies.get("authUserId")?.value;
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("authUserId")?.value;
+
     if (!userId) {
-      return NextResponse.json({ user: null }, { status: 401 });
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -20,12 +23,12 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ user: null }, { status: 404 });
+      return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
-    return NextResponse.json({ user }, { status: 200 });
+    return NextResponse.json({ user });
   } catch (error) {
-    console.error("Fetch current user error:", error);
-    return NextResponse.json({ user: null }, { status: 500 });
+    console.error("Error in /api/auth/me:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
