@@ -51,21 +51,6 @@ const reminderOptions = [
   { value: 1440, label: "يوم قبل" },
 ];
 
-const weekDays = [
-  { name: "الأحد", short: "أ", en: "Sun" },
-  { name: "الإثنين", short: "إ", en: "Mon" },
-  { name: "الثلاثاء", short: "ث", en: "Tue" },
-  { name: "الأربعاء", short: "أر", en: "Wed" },
-  { name: "الخميس", short: "خ", en: "Thu" },
-  { name: "الجمعة", short: "ج", en: "Fri" },
-  { name: "السبت", short: "س", en: "Sat" },
-];
-
-const monthNames = [
-  "يناير", "فبراير", "مارس", "أبريل", "ماي", "يونيو",
-  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
-];
-
 function Gavel(props: any) {
   return (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -86,8 +71,6 @@ export default function RendezVousPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<"month" | "week" | "day" | "list">("list");
   const [selectedType, setSelectedType] = useState("all");
   const [search, setSearch] = useState("");
   
@@ -155,35 +138,6 @@ export default function RendezVousPage() {
     return found?.color || "bg-gray-100 text-gray-600";
   };
 
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const days = [];
-    const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
-    
-    for (let i = 0; i < startDay; i++) {
-      days.push(null);
-    }
-    
-    for (let i = 1; i <= lastDay.getDate(); i++) {
-      days.push(new Date(year, month, i));
-    }
-    
-    return days;
-  };
-
-  const getAppointmentsForDate = (date: Date) => {
-    if (!date) return [];
-    return appointments.filter(a => {
-      const aptDate = new Date(a.date);
-      return aptDate.getDate() === date.getDate() &&
-        aptDate.getMonth() === date.getMonth() &&
-        aptDate.getFullYear() === date.getFullYear();
-    });
-  };
-
   const filteredAppointments = appointments.filter(a => {
     if (selectedType !== "all" && a.type !== selectedType) return false;
     if (search && !a.title.includes(search) && !a.clientName?.includes(search)) return false;
@@ -197,16 +151,6 @@ export default function RendezVousPage() {
   const past = filteredAppointments.filter(a => a.isDone).sort((a, b) => 
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
-
-  const changeMonth = (delta: number) => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() + delta);
-    setCurrentDate(newDate);
-  };
-
-  const goToToday = () => {
-    setCurrentDate(new Date());
-  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -352,8 +296,6 @@ export default function RendezVousPage() {
     }
   };
 
-  const days = getDaysInMonth(currentDate);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -452,238 +394,149 @@ export default function RendezVousPage() {
         </div>
       </div>
 
-      {/* Calendar Controls - Vue mois uniquement pour l'affichage calendrier */}
-      {view === "month" && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <ChevronRight className="w-5 h-5" />
-              </button>
-              <h2 className="text-xl font-bold text-gray-800">
-                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-              </h2>
-              <button onClick={() => changeMonth(1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button onClick={goToToday} className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                اليوم
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setView("list")} className={`px-4 py-2 rounded-lg text-sm transition-all ${view === "list" ? "bg-primary text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-                <ListChecks className="w-4 h-4 inline ml-1" /> قائمة
-              </button>
-            </div>
+      {/* List View - Modern Cards */}
+      <div className="space-y-4">
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              className="w-full pr-10 p-2.5 bg-white border border-gray-200 rounded-lg text-sm"
+              placeholder="بحث عن موعد..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
+          <select
+            className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm"
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+          >
+            <option value="all">جميع الأنواع</option>
+            {appointmentTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
         </div>
-      )}
 
-      {/* Month View Calendar */}
-      {view === "month" && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-          <div className="grid grid-cols-7 border-b">
-            {weekDays.map((day, idx) => (
-              <div key={idx} className="p-3 text-center font-semibold text-gray-600 border-l">
-                {day.name}
+        {/* Upcoming Appointments */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <CalIcon className="w-5 h-5 text-primary" />
+            المواعيد القادمة
+          </h3>
+          <div className="space-y-3">
+            {upcoming.length === 0 ? (
+              <div className="text-center py-12 text-gray-500 bg-white rounded-xl border">
+                <CalIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>لا توجد مواعيد قادمة</p>
               </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 auto-rows-fr">
-            {days.map((date, idx) => {
-              const dayAppointments = date ? getAppointmentsForDate(date) : [];
-              const isToday = date && date.toDateString() === new Date().toDateString();
-              
-              return (
-                <div
-                  key={idx}
-                  className={`min-h-[120px] p-2 border-l border-b transition-all hover:bg-gray-50 ${
-                    !date ? "bg-gray-50" : ""
-                  } ${isToday ? "bg-primary/5 border-r-2 border-r-primary" : ""}`}
-                >
-                  {date && (
-                    <>
-                      <div className={`text-sm font-medium mb-2 ${isToday ? "text-primary font-bold" : "text-gray-700"}`}>
-                        {date.getDate()}
-                      </div>
-                      <div className="space-y-1">
-                        {dayAppointments.slice(0, 3).map((apt) => {
-                          const TypeIcon = getTypeIcon(apt.type || "audience");
-                          const typeColor = getTypeColor(apt.type || "audience");
-                          return (
-                            <div
-                              key={apt.id}
-                              onClick={() => openEdit(apt)}
-                              className={`text-xs p-1.5 rounded-lg cursor-pointer transition-all hover:scale-105 ${typeColor}`}
-                            >
-                              <div className="flex items-center gap-1">
-                                <TypeIcon className="w-3 h-3" />
-                                <span className="font-medium truncate flex-1">{apt.title}</span>
-                              </div>
-                              <div className="text-xs opacity-75 mt-0.5">{apt.time}</div>
-                            </div>
-                          );
-                        })}
-                        {dayAppointments.length > 3 && (
-                          <div className="text-xs text-gray-400 text-center">
-                            +{dayAppointments.length - 3} أخرى
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* List View - Modern Cards (toujours visible si view n'est pas month) */}
-      {(view === "list" || view !== "month") && (
-        <div className="space-y-4">
-          {/* Filters */}
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                className="w-full pr-10 p-2.5 bg-white border border-gray-200 rounded-lg text-sm"
-                placeholder="بحث عن موعد..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <select
-              className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm"
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-            >
-              <option value="all">جميع الأنواع</option>
-              {appointmentTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-          </div>
-
-          {/* Upcoming Appointments */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <CalIcon className="w-5 h-5 text-primary" />
-              المواعيد القادمة
-            </h3>
-            <div className="space-y-3">
-              {upcoming.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 bg-white rounded-xl border">
-                  <CalIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>لا توجد مواعيد قادمة</p>
-                </div>
-              ) : (
-                upcoming.map((apt) => {
-                  const TypeIcon = getTypeIcon(apt.type || "audience");
-                  const typeColor = getTypeColor(apt.type || "audience");
-                  return (
-                    <div key={apt.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all">
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div className="flex items-start gap-3 flex-1">
-                          <div className={`p-3 rounded-xl ${typeColor}`}>
-                            <TypeIcon className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-800">{apt.title}</h4>
-                            <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
+            ) : (
+              upcoming.map((apt) => {
+                const TypeIcon = getTypeIcon(apt.type || "audience");
+                const typeColor = getTypeColor(apt.type || "audience");
+                return (
+                  <div key={apt.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className={`p-3 rounded-xl ${typeColor}`}>
+                          <TypeIcon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800">{apt.title}</h4>
+                          <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <CalIcon className="w-4 h-4" /> {formatDate(apt.date)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" /> {formatTime(apt.time)}
+                            </span>
+                            {apt.location && (
                               <span className="flex items-center gap-1">
-                                <CalIcon className="w-4 h-4" /> {formatDate(apt.date)}
+                                <MapPin className="w-4 h-4" /> {apt.location}
                               </span>
+                            )}
+                            {apt.dossier && (
                               <span className="flex items-center gap-1">
-                                <Clock className="w-4 h-4" /> {formatTime(apt.time)}
+                                <FileText className="w-4 h-4" /> {apt.dossier.title}
                               </span>
-                              {apt.location && (
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="w-4 h-4" /> {apt.location}
-                                </span>
-                              )}
-                              {apt.dossier && (
-                                <span className="flex items-center gap-1">
-                                  <FileText className="w-4 h-4" /> {apt.dossier.title}
-                                </span>
-                              )}
-                              {apt.clientName && (
-                                <span className="flex items-center gap-1">
-                                  <Users className="w-4 h-4" /> {apt.clientName}
-                                </span>
-                              )}
-                            </div>
-                            {apt.description && (
-                              <p className="text-sm text-gray-500 mt-2">{apt.description}</p>
+                            )}
+                            {apt.clientName && (
+                              <span className="flex items-center gap-1">
+                                <Users className="w-4 h-4" /> {apt.clientName}
+                              </span>
                             )}
                           </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => toggleDone(apt.id, apt.isDone)}
-                            className="p-2 rounded-lg hover:bg-green-50 text-green-600 transition-all"
-                            title="إنجاز"
-                          >
-                            <CheckCircle2 className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => openEdit(apt)}
-                            className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition-all"
-                            title="تعديل"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(apt.id)}
-                            className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-all"
-                            title="حذف"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {apt.description && (
+                            <p className="text-sm text-gray-500 mt-2">{apt.description}</p>
+                          )}
                         </div>
                       </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => toggleDone(apt.id, apt.isDone)}
+                          className="p-2 rounded-lg hover:bg-green-50 text-green-600 transition-all"
+                          title="إنجاز"
+                        >
+                          <CheckCircle2 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => openEdit(apt)}
+                          className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition-all"
+                          title="تعديل"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(apt.id)}
+                          className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-all"
+                          title="حذف"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  );
-                })
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Past Appointments */}
+        {past.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              المواعيد المنجزة
+            </h3>
+            <div className="space-y-2">
+              {past.slice(0, 5).map((apt) => (
+                <div key={apt.id} className="bg-gray-50 rounded-lg p-3 opacity-75">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium line-through text-gray-500">{apt.title}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {formatDate(apt.date)} - {apt.time}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => toggleDone(apt.id, apt.isDone)}
+                      className="p-1.5 rounded-lg hover:bg-yellow-50 text-yellow-600 transition-all"
+                      title="إعادة فتح"
+                    >
+                      <Clock className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {past.length > 5 && (
+                <p className="text-center text-sm text-gray-400 mt-2">
+                  + {past.length - 5} مواعيد أخرى
+                </p>
               )}
             </div>
           </div>
-
-          {/* Past Appointments */}
-          {past.length > 0 && (
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                المواعيد المنجزة
-              </h3>
-              <div className="space-y-2">
-                {past.slice(0, 5).map((apt) => (
-                  <div key={apt.id} className="bg-gray-50 rounded-lg p-3 opacity-75">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium line-through text-gray-500">{apt.title}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {formatDate(apt.date)} - {apt.time}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => toggleDone(apt.id, apt.isDone)}
-                        className="p-1.5 rounded-lg hover:bg-yellow-50 text-yellow-600 transition-all"
-                        title="إعادة فتح"
-                      >
-                        <Clock className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {past.length > 5 && (
-                  <p className="text-center text-sm text-gray-400 mt-2">
-                    + {past.length - 5} مواعيد أخرى
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Modal Premium */}
       {showModal && (
