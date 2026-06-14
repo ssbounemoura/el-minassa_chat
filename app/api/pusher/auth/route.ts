@@ -34,3 +34,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Erreur d'authentification" }, { status: 500 });
   }
 }
+
+export async function GET() {
+  return NextResponse.json({ message: "Pusher auth endpoint - use POST" });
+}
