@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    // Récupérer l'userId depuis le cookie
-    const cookieHeader = req.headers.get("cookie");
-    const authCookie = cookieHeader?.match(/authUserId=([^;]+)/);
-    const userId = authCookie ? authCookie[1] : null;
+    // Récupérer l'userId depuis les cookies
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("authUserId")?.value;
 
     if (!userId) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const totalRendezVous = await prisma.rendezVous.count({ where: { userId } });
     const totalDocuments = await prisma.document.count({ where: { userId } });
 
-    // Prochains rendez-vous
+    // Prochains rendez-vous (sans le champ time qui n'existe pas)
     const upcomingRendezVous = await prisma.rendezVous.findMany({
       where: {
         userId,
@@ -31,7 +31,6 @@ export async function GET(req: NextRequest) {
         id: true,
         title: true,
         date: true,
-        time: true,
       },
     });
 
@@ -44,7 +43,6 @@ export async function GET(req: NextRequest) {
         id: r.id,
         title: r.title,
         date: r.date.toISOString(),
-        time: r.time,
       })),
     });
   } catch (error) {

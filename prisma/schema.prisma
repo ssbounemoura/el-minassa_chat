@@ -186,7 +186,7 @@ model Dossier {
 }
 
 // ============================================
-// MODÈLE RENDEZ-VOUS
+// MODÈLE RENDEZ-VOUS (CORRIGÉ - UNE SEULE FOIS AVEC time)
 // ============================================
 model RendezVous {
   id          String    @id @default(cuid())
@@ -197,6 +197,7 @@ model RendezVous {
   title       String
   description String?
   date        DateTime
+  time        String?   // ← AJOUTÉ : heure du rendez-vous
   duration    Int       @default(30)
   location    String?
   isDone      Boolean   @default(false)
@@ -224,14 +225,14 @@ model Document {
 }
 
 // ============================================
-// MODÈLE FACTURE (CORRIGÉ - AJOUT DU CHAMP client)
+// MODÈLE FACTURE
 // ============================================
 model Facture {
   id             String    @id @default(cuid())
   userId         String
   user           User      @relation(fields: [userId], references: [id])
   invoiceNumber  String    @unique
-  client         String    // ← AJOUTÉ : nom du client
+  client         String
   amount         Float
   description    String?
   status         String    @default("BROUILLON")
