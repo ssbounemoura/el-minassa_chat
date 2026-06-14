@@ -10,20 +10,20 @@ const pusherServer = new Pusher({
   useTLS: true,
 });
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    if (!session?.user?.email || !session?.user?.id) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { socket_id, channel_name } = body;
 
     const authResponse = pusherServer.authorizeChannel(socket_id, channel_name, {
       user_id: session.user.id,
       user_info: {
-        name: session.user.name,
+        name: session.user.name || "",
         email: session.user.email,
       },
     });
@@ -33,9 +33,4 @@ export async function POST(request: Request) {
     console.error("Erreur auth Pusher:", error);
     return NextResponse.json({ error: "Erreur d'authentification" }, { status: 500 });
   }
-}
-
-// Optionnel : pour les requêtes GET (debug)
-export async function GET() {
-  return NextResponse.json({ message: "Pusher auth endpoint - use POST" });
 }
