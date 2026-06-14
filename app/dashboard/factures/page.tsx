@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { 
-  Plus, Search, X, Receipt, CheckCircle2, Clock, AlertTriangle, 
+  Plus, Search, Eye, X, Receipt, CheckCircle2, Clock, AlertTriangle, 
   Trash2, Edit2, Save, AlertCircle, Calendar, CreditCard, User, 
   Phone, Mail, FileText, DollarSign, Wallet, Banknote, Landmark,
   Bell, MapPin, Hash, MessageCircle, Repeat, Printer,
@@ -103,8 +103,11 @@ export default function FacturesPage() {
     try {
       const res = await fetch("/api/factures");
       const data = await res.json();
-      if (data.factures) setInvoices(data.factures);
+      if (data.factures) {
+        setInvoices(data.factures);
+      }
     } catch (error) {
+      console.error("Erreur chargement factures:", error);
       showToastMessage("خطأ في تحميل الفواتير", "error");
     } finally {
       setLoading(false);
@@ -178,22 +181,22 @@ export default function FacturesPage() {
   const totals = calculateTotals();
   const reminderDate = getReminderDate();
 
-  // Fonction d'impression avec mention bien visible
+  // Fonction pour obtenir le rôle en arabe
+  const getRoleInArabic = (role: string | undefined) => {
+    const roleUpper = role?.toUpperCase();
+    if (roleUpper === "AVOCAT") return "محامي";
+    if (roleUpper === "NOTAIRE") return "موثق";
+    if (roleUpper === "HUISSIER") return "محضر قضائي";
+    return "محامي";
+  };
+
+  // Fonction d'impression
   const printInvoice = (invoice: Facture) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
     
     const taxAmount = invoice.amount * 0.19;
     const totalWithTax = invoice.amount + taxAmount;
-    
-    const getRoleInArabic = (role: string) => {
-      switch(role?.toUpperCase()) {
-        case "AVOCAT": return "محامي";
-        case "NOTAIRE": return "موثق";
-        case "HUISSIER": return "محضر قضائي";
-        default: return role || "محامي";
-      }
-    };
     
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -303,15 +306,6 @@ export default function FacturesPage() {
             font-weight: 600;
             color: #1a202c;
           }
-          .info-card .status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            background: ${invoice.status === "PAYEE" ? "#c6f6d5" : invoice.status === "EN_RETARD" ? "#fed7d7" : "#e2e8f0"};
-            color: ${invoice.status === "PAYEE" ? "#22543d" : invoice.status === "EN_RETARD" ? "#742a2a" : "#4a5568"};
-          }
           .items-table {
             padding: 0 35px;
             margin: 30px 0;
@@ -364,48 +358,18 @@ export default function FacturesPage() {
             background: #f8f9fc;
             border-top: 1px solid #e2e8f0;
           }
-          .website-mention {
-            margin-top: 15px;
-            padding: 15px 20px;
-            background: linear-gradient(135deg, #e8f0e8 0%, #d4e4d4 100%);
-            border-radius: 12px;
-            border: 2px solid #1a472a;
-          }
-          .website-mention-text {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1a472a;
-            margin-bottom: 8px;
-          }
-          .website-link {
+          .status-badge {
             display: inline-block;
-            background: #1a472a;
-            color: white !important;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 16px;
-            padding: 8px 20px;
-            border-radius: 30px;
-            margin: 8px 0;
-            letter-spacing: 0.5px;
-          }
-          .website-sub {
-            font-size: 11px;
-            color: #4a5568;
-            margin-top: 5px;
-          }
-          .payment-info {
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 12px;
-            color: #4a5568;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px dashed #e2e8f0;
+            font-weight: 600;
+            background: ${invoice.status === "PAYEE" ? "#c6f6d5" : invoice.status === "EN_RETARD" ? "#fed7d7" : "#e2e8f0"};
+            color: ${invoice.status === "PAYEE" ? "#22543d" : invoice.status === "EN_RETARD" ? "#742a2a" : "#4a5568"};
           }
           @media print {
             body { background: white; padding: 0; }
             .invoice-wrapper { box-shadow: none; border-radius: 0; }
-            .website-mention { background: #e8f0e8; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .website-link { background: #1a472a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           }
         </style>
       </head>
@@ -445,7 +409,7 @@ export default function FacturesPage() {
             </div>
             <div class="info-card">
               <h4>الحالة</h4>
-              <p><span class="status">${
+              <p><span class="status-badge">${
                 invoice.status === "PAYEE" ? "مدفوعة" : 
                 invoice.status === "EN_RETARD" ? "متأخرة" : 
                 invoice.status === "ENVOYEE" ? "مرسلة" :
@@ -471,24 +435,11 @@ export default function FacturesPage() {
               <div class="totals-row"><span>الضريبة (TVA 19%):</span><span><strong>${formatAmount(taxAmount)}</strong> د.ج</span></div>
               <div class="totals-row total"><span>الإجمالي شامل الضريبة:</span><span>${formatAmount(totalWithTax)} د.ج</span></div>
             </div>
-            <div class="payment-info">
-              <strong>معلومات الدفع</strong><br>
-              ${userInfo?.officeName ? `Compte : ${userInfo.officeName}<br>` : ''}
-              ${userInfo?.phone ? `Contact : ${userInfo.phone}` : ''}
-            </div>
           </div>
           
           <div class="footer">
             <p>شكراً لثقتكم في خدماتنا المهنية</p>
-            <p style="margin-top:5px; font-size:10px;">هذه فاتورة رسمية معتمدة</p>
-            
-            <div class="website-mention">
-              <div class="website-mention-text">📄 هذه الفاتورة تم إنشاؤها وإدارتها عبر منصة</div>
-              <div>
-                <a href="https://www.el-minassa.com" target="_blank" class="website-link">🌐 www.el-minassa.com</a>
-              </div>
-              <div class="website-sub">المنصة القانونية الجزائرية لإدارة المكاتب القانونية</div>
-            </div>
+            <p style="margin-top:8px; font-size:10px;">هذه فاتورة رسمية معتمدة</p>
           </div>
         </div>
         <script>window.print();</script>
@@ -539,23 +490,12 @@ export default function FacturesPage() {
                       <option value="ANNULEE">ملغاة</option>
                     </select>
                   </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <span className={isOverdue ? "text-red-600 font-bold" : ""}>{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString("ar") : "-"}</span>
-                      {isOverdue && <AlertTriangle className="w-4 h-4 text-red-500" />}
-                    </div>
-                  </td>
+                  <td className="p-3"><div className="flex items-center gap-2"><span className={isOverdue ? "text-red-600 font-bold" : ""}>{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString("ar") : "-"}</span>{isOverdue && <AlertTriangle className="w-4 h-4 text-red-500" />}</div></td>
                   <td className="p-3 text-center">
                     <div className="flex gap-2 justify-center">
-                      <button onClick={() => printInvoice(inv)} className="p-2 rounded-lg hover:bg-purple-50 text-purple-600 transition-all duration-200 hover:scale-110" title="طباعة الفاتورة">
-                        <Printer className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => { setEditingInvoice(inv); setForm({ client: inv.client, clientEmail: "", clientPhone: "", clientAddress: "", clientVat: "", amount: inv.amount.toString(), description: inv.description || "", dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split("T")[0] : "", issueDate: new Date(inv.createdAt).toISOString().split("T")[0], paymentMethod: "cash", notes: "", reminderDays: "3", taxRate: "19", discount: "", discountType: "percentage", reference: "", bankAccount: "", iban: "", swift: "", paymentTerms: "30", signature: false, stamp: false, includeVat: true }); setShowModal(true); }} className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition-all duration-200 hover:scale-110" title="تعديل">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(inv.id)} className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-all duration-200 hover:scale-110" title="حذف">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <button onClick={() => printInvoice(inv)} className="p-2 rounded-lg hover:bg-purple-50 text-purple-600 transition-all duration-200 hover:scale-110" title="طباعة الفاتورة"><Printer className="w-4 h-4" /></button>
+                      <button onClick={() => { setEditingInvoice(inv); setForm({ client: inv.client, clientEmail: "", clientPhone: "", clientAddress: "", clientVat: "", amount: inv.amount.toString(), description: inv.description || "", dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split("T")[0] : "", issueDate: new Date(inv.createdAt).toISOString().split("T")[0], paymentMethod: "cash", notes: "", reminderDays: "3", taxRate: "19", discount: "", discountType: "percentage", reference: "", bankAccount: "", iban: "", swift: "", paymentTerms: "30", signature: false, stamp: false, includeVat: true }); setShowModal(true); }} className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition-all duration-200 hover:scale-110" title="تعديل"><Edit2 className="w-4 h-4" /></button>
+                      <button onClick={() => handleDelete(inv.id)} className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-all duration-200 hover:scale-110" title="حذف"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </td>
                 </tr>
@@ -565,37 +505,32 @@ export default function FacturesPage() {
         </table>
       </div>
 
-      {/* Modal d'ajout / modification */}
+      {/* Modal d'ajout */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="bg-primary p-5 sticky top-0"><div className="flex justify-between"><div><h2 className="text-2xl font-bold text-white">{editingInvoice ? "✏️ تعديل فاتورة" : "💰 فاتورة جديدة"}</h2><p className="text-white/80 text-sm">جميع الخيارات الاحترافية</p></div><button onClick={() => setShowModal(false)} className="text-white text-2xl">✕</button></div></div>
 
             <div className="p-6 space-y-5">
-              {/* معلومات العميل */}
               <div className="border rounded-xl p-4"><h3 className="font-bold mb-3 flex items-center gap-2"><User className="w-5 h-5" /> معلومات العميل</h3>
                 <div className="grid grid-cols-2 gap-3"><input className="border rounded-lg p-2" placeholder="اسم العميل *" value={form.client} onChange={(e) => setForm({...form, client: e.target.value})} /><input className="border rounded-lg p-2" placeholder="البريد الإلكتروني" value={form.clientEmail} onChange={(e) => setForm({...form, clientEmail: e.target.value})} /><input className="border rounded-lg p-2" placeholder="رقم الهاتف" value={form.clientPhone} onChange={(e) => setForm({...form, clientPhone: e.target.value})} /><input className="border rounded-lg p-2" placeholder="العنوان" value={form.clientAddress} onChange={(e) => setForm({...form, clientAddress: e.target.value})} /><input className="border rounded-lg p-2 col-span-2" placeholder="الرقم الجبائي / NIF" value={form.clientVat} onChange={(e) => setForm({...form, clientVat: e.target.value})} /></div>
               </div>
 
-              {/* المبالغ والضرائب */}
               <div className="border rounded-xl p-4"><h3 className="font-bold mb-3 flex items-center gap-2"><DollarSign className="w-5 h-5" /> المبالغ والضرائب</h3>
                 <div className="grid grid-cols-3 gap-3"><input type="number" className="border rounded-lg p-2" placeholder="المبلغ بدون ضريبة" value={form.amount} onChange={(e) => setForm({...form, amount: e.target.value})} /><div className="flex gap-2"><input type="number" className="border rounded-lg p-2 w-20" placeholder="نسبة الضريبة %" value={form.taxRate} onChange={(e) => setForm({...form, taxRate: e.target.value})} /><span className="p-2">%</span></div><div className="flex gap-2"><input type="number" className="border rounded-lg p-2 w-20" placeholder="الخصم" value={form.discount} onChange={(e) => setForm({...form, discount: e.target.value})} /><select className="border rounded-lg p-2" value={form.discountType} onChange={(e) => setForm({...form, discountType: e.target.value})}><option value="percentage">%</option><option value="fixed">د.ج</option></select></div></div>
                 <div className="mt-3 p-3 bg-gray-100 rounded-lg"><div className="flex justify-between"><span>المبلغ الإجمالي:</span><span>{formatAmount(totals.subtotal)} د.ج</span></div><div className="flex justify-between"><span>قيمة الضريبة:</span><span>{formatAmount(totals.tax)} د.ج</span></div><div className="flex justify-between font-bold pt-2 border-t"><span>المبلغ النهائي شامل الضريبة:</span><span className="text-primary">{formatAmount(totals.total)} د.ج</span></div></div>
               </div>
 
-              {/* وسيلة الدفع */}
               <div className="border rounded-xl p-4"><h3 className="font-bold mb-3 flex items-center gap-2"><CreditCard className="w-5 h-5" /> وسيلة الدفع</h3>
                 <div className="flex gap-3 flex-wrap">{paymentMethods.map(m => <button key={m.id} type="button" onClick={() => setForm({...form, paymentMethod: m.id})} className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${form.paymentMethod === m.id ? "border-primary bg-primary/10 text-primary" : "border-gray-200"}`}><m.icon className="w-4 h-4" />{m.name}</button>)}</div>
               </div>
 
-              {/* التواريخ والتذكير */}
               <div className="border rounded-xl p-4"><h3 className="font-bold mb-3 flex items-center gap-2"><Calendar className="w-5 h-5" /> التواريخ والتذكير</h3>
                 <div className="grid grid-cols-2 gap-3"><input type="date" className="border rounded-lg p-2" value={form.issueDate} onChange={(e) => setForm({...form, issueDate: e.target.value})} /><input type="date" className="border rounded-lg p-2" value={form.dueDate} onChange={(e) => setForm({...form, dueDate: e.target.value})} /></div>
                 <button onClick={() => setShowReminder(!showReminder)} className="mt-3 text-primary flex items-center gap-2"><Bell className="w-4 h-4" /> {showReminder ? "إخفاء خيارات التذكير" : "🔔 إضافة تذكير"}</button>
                 {showReminder && <div className="mt-3 p-3 bg-orange-50 rounded-lg"><select className="border rounded-lg p-2 w-full" value={form.reminderDays} onChange={(e) => setForm({...form, reminderDays: e.target.value})}>{reminderOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}</select>{reminderDate && <p className="mt-2 text-green-600">📅 سيتم التذكير يوم {reminderDate.toLocaleDateString("ar")}</p>}</div>}
               </div>
 
-              {/* خيارات متقدمة */}
               <div className="border rounded-xl p-4"><h3 className="font-bold mb-3 flex items-center gap-2"><Zap className="w-5 h-5" /> خيارات متقدمة</h3>
                 <button onClick={() => setShowAdvanced(!showAdvanced)} className="text-indigo-600 flex items-center gap-2">{showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />} {showAdvanced ? "إخفاء الخيارات" : "عرض الخيارات المتقدمة"}</button>
                 {showAdvanced && <div className="mt-3 grid grid-cols-2 gap-3"><select className="border rounded-lg p-2" value={form.paymentTerms} onChange={(e) => setForm({...form, paymentTerms: e.target.value})}><option value="0">عند الاستلام</option><option value="15">15 يوماً</option><option value="30">30 يوماً</option><option value="45">45 يوماً</option><option value="60">60 يوماً</option></select><input className="border rounded-lg p-2" placeholder="IBAN" value={form.iban} onChange={(e) => setForm({...form, iban: e.target.value})} /><input className="border rounded-lg p-2" placeholder="SWIFT/BIC" value={form.swift} onChange={(e) => setForm({...form, swift: e.target.value})} /><div className="flex gap-3"><label className="flex items-center gap-2"><input type="checkbox" checked={form.signature} onChange={(e) => setForm({...form, signature: e.target.checked})} /> توقيع إلكتروني</label><label className="flex items-center gap-2"><input type="checkbox" checked={form.stamp} onChange={(e) => setForm({...form, stamp: e.target.checked})} /> ختم رسمي</label></div></div>}
