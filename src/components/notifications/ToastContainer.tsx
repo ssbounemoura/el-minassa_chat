@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { X, CheckCircle, AlertCircle, Info, Volume2, VolumeX } from "lucide-react";
 
 interface Toast {
@@ -44,19 +44,31 @@ export default function ToastContainer() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [muted, setMuted] = useState(false);
 
+  const playSound = useCallback((type: string) => {
+    try {
+      const audio = new Audio(SOUNDS[type as keyof typeof SOUNDS] || SOUNDS.info);
+      audio.volume = 0.4; // Volume à 40% (discret mais audible)
+      audio.play().catch(e => console.log("🔇 Son non joué:", e));
+    } catch (error) {
+      console.log("Erreur lecture son:", error);
+    }
+  }, []);
+
   useEffect(() => {
-    // Charger la préférence sonore
-    setMuted(!isSoundEnabled());
+    const initSound = async () => {
+      setMuted(!isSoundEnabled());
+    };
+    void initSound();
 
     const handleNewToast = (event: CustomEvent<Toast>) => {
       const newToast = event.detail;
       setToasts((prev) => [...prev, newToast]);
-      
+
       // Jouer le son si activé
       if (newToast.sound !== false && isSoundEnabled()) {
         playSound(newToast.type);
       }
-      
+
       // Auto-suppression
       setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== newToast.id));
@@ -65,17 +77,7 @@ export default function ToastContainer() {
 
     window.addEventListener("new-toast" as any, handleNewToast);
     return () => window.removeEventListener("new-toast" as any, handleNewToast);
-  }, []);
-
-  const playSound = (type: string) => {
-    try {
-      const audio = new Audio(SOUNDS[type as keyof typeof SOUNDS] || SOUNDS.info);
-      audio.volume = 0.4; // Volume à 40% (discret mais audible)
-      audio.play().catch(e => console.log("🔇 Son non joué:", e));
-    } catch (error) {
-      console.log("Erreur lecture son:", error);
-    }
-  };
+  }, [playSound]);
 
   const getIcon = (type: string) => {
     switch (type) {

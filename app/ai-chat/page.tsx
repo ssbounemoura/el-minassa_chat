@@ -51,6 +51,7 @@ export default function AiChatPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageIdRef = useRef(0);
 
   // Conversation state
   const [currentConvId, setCurrentConvId] = useState<string | null>(null);
@@ -80,7 +81,10 @@ export default function AiChatPage() {
   }, []);
 
   useEffect(() => {
-    loadConversations();
+    const loadData = async () => {
+      await loadConversations();
+    };
+    void loadData();
   }, [loadConversations]);
 
   // Save conversation to DB
@@ -144,8 +148,9 @@ export default function AiChatPage() {
     if (!content.trim() || isTyping) return;
     setError("");
 
+    messageIdRef.current += 1;
     const userMsg: AiMessage = {
-      id: Date.now().toString(),
+      id: `user-${messageIdRef.current}`,
       role: "user",
       content,
       timestamp: newTimestamp(),
@@ -170,8 +175,9 @@ export default function AiChatPage() {
         return;
       }
 
+      messageIdRef.current += 1;
       const aiMsg: AiMessage = {
-        id: (Date.now() + 1).toString(),
+        id: `assistant-${messageIdRef.current}`,
         role: "assistant",
         content: data.content,
         timestamp: newTimestamp(),

@@ -162,17 +162,20 @@ export default function NotificationBell() {
 
   // Poll every 30 seconds and refresh on focus/visibility change
   useEffect(() => {
-    fetchNotifications();
+    const loadNotifications = async () => {
+      await fetchNotifications();
+    };
+    void loadNotifications();
     const interval = setInterval(fetchNotifications, POLL_INTERVAL);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        fetchNotifications();
+        void fetchNotifications();
       }
     };
 
     const handleWindowFocus = () => {
-      fetchNotifications();
+      void fetchNotifications();
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);

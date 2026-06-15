@@ -26,7 +26,12 @@ export default function PlansPage() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchPlans(); }, [fetchPlans]);
+  useEffect(() => {
+    const loadPlans = async () => {
+      await fetchPlans();
+    };
+    void loadPlans();
+  }, [fetchPlans]);
 
   const savePlan = async () => {
     if (!editing?.name || editing.price === undefined) { setError("الاسم والسعر مطلوبان"); return; }

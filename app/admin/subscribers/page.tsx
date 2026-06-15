@@ -35,7 +35,12 @@ export default function SubscribersPage() {
     finally { setLoading(false); }
   }, [search, roleFilter]);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    const loadUsers = async () => {
+      await fetchUsers();
+    };
+    void loadUsers();
+  }, [fetchUsers]);
 
   const toggleActive = async (id: string) => {
     const res = await fetch("/api/admin/subscribers", {

@@ -107,8 +107,11 @@ export default function AnnouncementsPage() {
   }, []);
 
   useEffect(() => {
-    fetchLogs();
-    fetchSubscribers();
+    const loadData = async () => {
+      await fetchLogs();
+      await fetchSubscribers();
+    };
+    void loadData();
   }, [fetchLogs, fetchSubscribers]);
 
   const handleSubmit = async (e: React.FormEvent) => {

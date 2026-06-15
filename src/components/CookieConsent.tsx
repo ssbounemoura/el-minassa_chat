@@ -1,7 +1,7 @@
 // src/components/CookieConsent.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Cookie, X, Settings } from "lucide-react";
 
@@ -22,28 +22,9 @@ export default function CookieConsent() {
     functional: false,
   });
 
-  useEffect(() => {
-    // Vérifier si l'utilisateur a déjà choisi
-    const consent = localStorage.getItem("cookie-consent");
-    const savedPrefs = localStorage.getItem("cookie-preferences");
-    
-    if (!consent) {
-      // Afficher la bannière après un court délai
-      const timer = setTimeout(() => setIsVisible(true), 500);
-      return () => clearTimeout(timer);
-    } else if (savedPrefs) {
-      setPreferences(JSON.parse(savedPrefs));
-      applyConsent(JSON.parse(savedPrefs));
-    } else {
-      applyConsent(preferences);
-    }
-  }, []);
-
-  const applyConsent = (prefs: CookiePreferences) => {
-    // Appliquer les préférences cookies
+  const applyConsent = useCallback((prefs: CookiePreferences) => {
     if (prefs.analytics) {
       console.log("✅ Analytics cookies activés");
-      // Tu peux ajouter ici Google Analytics ou autre
     }
     if (prefs.marketing) {
       console.log("✅ Marketing cookies activés");
@@ -51,7 +32,29 @@ export default function CookieConsent() {
     if (prefs.functional) {
       console.log("✅ Functional cookies activés");
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    let timer: number | undefined;
+    const consent = localStorage.getItem("cookie-consent");
+    const savedPrefs = localStorage.getItem("cookie-preferences");
+
+    if (!consent) {
+      timer = window.setTimeout(() => setIsVisible(true), 500);
+    } else if (savedPrefs) {
+      const parsed = JSON.parse(savedPrefs) as CookiePreferences;
+      setPreferences(parsed);
+      applyConsent(parsed);
+    } else {
+      applyConsent({ necessary: true, analytics: false, marketing: false, functional: false });
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [applyConsent]);
 
   const saveConsent = (prefs: CookiePreferences) => {
     localStorage.setItem("cookie-consent", "true");

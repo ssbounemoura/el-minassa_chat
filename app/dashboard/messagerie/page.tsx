@@ -315,9 +315,9 @@ export default function MessageriePage() {
     }
   };
 
-  const formatTime = (isoString: string) => {
-    if (!isoString) return "";
-    return new Date(isoString).toLocaleTimeString("ar-DZ", { hour: "2-digit", minute: "2-digit" });
+  const formatTime = (value: string | Date) => {
+    if (!value) return "";
+    return new Date(value).toLocaleTimeString("ar-DZ", { hour: "2-digit", minute: "2-digit" });
   };
 
   const getInitials = (name: string) => {

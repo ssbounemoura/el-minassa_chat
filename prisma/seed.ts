@@ -101,7 +101,7 @@ async function main() {
   const adminPassword = await bcrypt.hash("ElMinassa2026!", 10);
   const admin = await prisma.user.upsert({
     where: { email: "admin@elminassa.dz" },
-    update: { password: adminPassword },
+    update: { password: adminPassword, isEmailVerified: true },
     create: {
       name: "مدير النظام",
       email: "admin@elminassa.dz",
@@ -109,6 +109,7 @@ async function main() {
       role: "SUPER_ADMIN",
       officeName: "إدارة المنصة",
       isActive: true,
+      isEmailVerified: true,
     },
   });
   console.log(`SuperAdmin password updated for: ${admin.email}`);
@@ -117,7 +118,7 @@ async function main() {
   const notairePassword = await bcrypt.hash("Notaire2026!", 10);
   const notaire = await prisma.user.upsert({
     where: { email: "notaire@elminassa.dz" },
-    update: { password: notairePassword },
+    update: { password: notairePassword, isEmailVerified: true },
     create: {
       name: "محمد بن موسى - موثق",
       email: "notaire@elminassa.dz",
@@ -126,6 +127,7 @@ async function main() {
       officeName: "مكتب التوثيق الجزائري",
       phone: "+213 555 123 456",
       isActive: true,
+      isEmailVerified: true,
     },
   });
   console.log(`Notaire account created/updated: ${notaire.email}`);
@@ -134,7 +136,7 @@ async function main() {
   const azhocinePassword = await bcrypt.hash("azerty21400", 10);
   const azhocine = await prisma.user.upsert({
     where: { email: "azhocine@atomicmail.io" },
-    update: { password: azhocinePassword, officeName: "إعداد المستخدم" },
+    update: { password: azhocinePassword, officeName: "إعداد المستخدم", isEmailVerified: true },
     create: {
       name: "A. Zhocine - Notaire",
       email: "azhocine@atomicmail.io",
@@ -143,6 +145,7 @@ async function main() {
       officeName: "إعداد المستخدم",
       phone: null,
       isActive: true,
+      isEmailVerified: true,
     },
   });
   console.log(`Requested Notaire account created/updated: ${azhocine.email}`);

@@ -56,7 +56,12 @@ export default function AdminDashboard() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchStats(); }, [fetchStats]);
+  useEffect(() => {
+    const loadStats = async () => {
+      await fetchStats();
+    };
+    void loadStats();
+  }, [fetchStats]);
 
   if (loading) {
     return (

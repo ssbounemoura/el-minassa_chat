@@ -185,14 +185,16 @@ export default function NotairePage() {
   };
 
   useEffect(() => {
-    if (!subscription?.endDate) {
+    const endDate = subscription?.endDate;
+
+    if (!subscription || !endDate) {
       setCountdown("");
       return;
     }
 
     const updateCountdown = () => {
       const now = new Date();
-      const end = new Date(subscription.endDate);
+      const end = new Date(endDate);
       const diffMs = end.getTime() - now.getTime();
 
       if (diffMs <= 0) {

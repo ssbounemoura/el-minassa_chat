@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint . --max-warnings=0",
     "seed": "npx tsx prisma/seed.ts",
     "cleanup": "npx tsx scripts/cleanup.ts",
     "postinstall": "prisma generate",
