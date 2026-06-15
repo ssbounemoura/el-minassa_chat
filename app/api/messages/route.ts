@@ -1,6 +1,5 @@
-// app/api/messages/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
 // ============================================
@@ -8,13 +7,15 @@ import { prisma } from "@/lib/prisma";
 // ============================================
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("authUserId")?.value;
+
+    if (!userId) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: userId },
     });
 
     if (!user) {
@@ -32,8 +33,18 @@ export async function GET(req: NextRequest) {
     });
 
     if (!participant) {
-      return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+      return NextResponse.json({ error: "غير مصرح لك برؤية هذه المحادثة" }, { status: 403 });
     }
+
+    // Marquer les messages non lus de l'autre utilisateur comme lus
+    await prisma.message.updateMany({
+      where: { 
+        conversationId, 
+        senderId: { not: user.id },
+        readAt: null 
+      },
+      data: { readAt: new Date() }
+    });
 
     const messages = await prisma.message.findMany({
       where: { conversationId },
@@ -64,13 +75,15 @@ export async function GET(req: NextRequest) {
 // ============================================
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("authUserId")?.value;
+
+    if (!userId) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: userId },
     });
 
     if (!user) {
@@ -99,18 +112,50 @@ export async function POST(req: NextRequest) {
         content,
       },
       include: {
-        sender: { select: { id: true, name: true } },
+        sender: { select: { id: true, name: true, role: true } },
       },
+    });
+
+    // Create notifications for other participants who receive this message
+    const participants = await prisma.conversationParticipant.findMany({
+      where: { conversationId },
+      select: { userId: true },
+    });
+    const recipientIds = participants
+      .map((p) => p.userId)
+      .filter((id) => id !== user.id);
+
+    if (recipientIds.length > 0) {
+      const truncated = content.length > 80 ? `${content.slice(0, 77)}...` : content;
+      await prisma.notification.createMany({
+        data: recipientIds.map((recipientId) => ({
+          userId: recipientId,
+          title: `رسالة جديدة من ${user.name}`,
+          content: truncated,
+          type: "message",
+          priority: "high",
+          link: `/dashboard/messagerie?conversationId=${conversationId}`,
+          sentAt: new Date(),
+        })),
+      });
+    }
+
+    // Mettre à jour la date de dernière activité de la conversation
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: new Date() }
     });
 
     return NextResponse.json({
       message: {
         id: created.id,
         senderId: created.senderId,
-        senderName: user.name,
+        senderName: created.sender.name,
+        senderRole: created.sender.role,
         content: created.content,
         time: created.createdAt,
         isMe: true,
+        read: false,
       },
     });
   } catch (error) {

@@ -15,5 +15,7 @@ async function readSettings() {
 
 export async function GET() {
   const settings = await readSettings();
-  return NextResponse.json({ maintenanceMode: !!settings.maintenanceMode });
+  const maintenanceMode = settings.maintenanceMode === true;
+
+  return NextResponse.json({ maintenanceMode });
 }

@@ -12,7 +12,7 @@ import NotificationBell from "@/components/NotificationBell";
 import { ROLE_LABELS } from "@/lib/utils";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
-const baseNav = [
+const avocatNav = [
   { href: "/dashboard", icon: LayoutDashboard, label: "لوحة التحكم" },
   { href: "/dashboard/clients", icon: Users, label: "العملاء" },
   { href: "/dashboard/dossiers", icon: FolderOpen, label: "الملفات" },
@@ -24,6 +24,21 @@ const baseNav = [
   { href: "/dashboard/notifications", icon: Bell, label: "الإشعارات" },
   { href: "/dashboard/settings", icon: Settings, label: "الإعدادات" },
 ];
+
+const notaireNav = [
+  { href: "/dashboard/notaire", icon: LayoutDashboard, label: "لوحة التحكم" },
+  { href: "/dashboard/notaire/actes", icon: FileText, label: "العقود الموثقة" },
+  { href: "/dashboard/notaire/registre", icon: FolderOpen, label: "السجل الموثقي" },
+  { href: "/dashboard/notaire/aide", icon: Brain, label: "نظام المساعدة" },
+  { href: "/dashboard/clients", icon: Users, label: "العملاء" },
+  { href: "/dashboard/rendez-vous", icon: Calendar, label: "المواعيد" },
+  { href: "/dashboard/documents", icon: FileText, label: "الوثائق" },
+  { href: "/dashboard/messagerie", icon: MessageSquare, label: "المراسلات" },
+  { href: "/dashboard/notifications", icon: Bell, label: "الإشعارات" },
+  { href: "/dashboard/settings", icon: Settings, label: "الإعدادات" },
+];
+
+const baseNav = avocatNav;
 
 const mockUser = {
   name: "الزائر",
@@ -38,6 +53,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [profileOpen, setProfileOpen] = useState(false);
   const { user } = useCurrentUser();
   const currentUser = user ?? mockUser;
+
+  // Sélectionner le menu selon le rôle
+  const navigationMenu = currentUser.role === "NOTAIRE" ? notaireNav : avocatNav;
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -76,7 +94,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-          {baseNav.map((item) => {
+          {navigationMenu.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
@@ -94,7 +112,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="p-4 border-t border-white/10">
           <Link
-            href="/login"
+            href="/api/auth/logout"
             className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-red-500/20 hover:text-red-300 transition-all"
           >
             <LogOut className="w-5 h-5" />

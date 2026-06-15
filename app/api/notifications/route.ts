@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
-
-async function getAvocatUserId(): Promise<string | null> {
-  const user = await prisma.user.findFirst({ where: { role: "AVOCAT" } });
-  return user?.id || null;
+async function getCurrentUserId(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get("authUserId")?.value || null;
 }
 
 // GET - Fetch notifications for current user
 export async function GET(req: NextRequest) {
   try {
-    const userId = await getAvocatUserId();
+    const userId = await getCurrentUserId();
     if (!userId) return NextResponse.json({ error: "مستخدم غير موجود" }, { status: 401 });
 
     const limit = parseInt(req.nextUrl.searchParams.get("limit") || "20");
@@ -47,7 +46,7 @@ export async function GET(req: NextRequest) {
 // POST - Mark notifications as read OR create a notification
 export async function POST(req: NextRequest) {
   try {
-    const userId = await getAvocatUserId();
+    const userId = await getCurrentUserId();
     if (!userId) return NextResponse.json({ error: "مستخدم غير موجود" }, { status: 401 });
 
     const body = await req.json();
@@ -102,7 +101,7 @@ export async function POST(req: NextRequest) {
 // DELETE - Delete a notification
 export async function DELETE(req: NextRequest) {
   try {
-    const userId = await getAvocatUserId();
+    const userId = await getCurrentUserId();
     if (!userId) return NextResponse.json({ error: "مستخدم غير موجود" }, { status: 401 });
 
     const id = req.nextUrl.searchParams.get("id");

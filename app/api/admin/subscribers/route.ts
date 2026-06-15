@@ -20,6 +20,13 @@ export async function GET(req: Request) {
         email: true,
         role: true,
         officeName: true,
+        wilayaId: true,
+        customWilaya: true,
+        wilaya: {
+          select: {
+            name: true,
+          },
+        },
         isActive: true,
       },
     });

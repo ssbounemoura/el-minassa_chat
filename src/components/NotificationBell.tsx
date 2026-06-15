@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { Bell, Check, CheckCheck, X, AlertTriangle, Info, CheckCircle2, Clock, Gavel, Calendar, ExternalLink } from "lucide-react";
+import { Bell, Check, CheckCheck, X, AlertTriangle, Info, CheckCircle2, Clock, Gavel, Calendar, ExternalLink, MessageSquare } from "lucide-react";
 
 interface Notification {
   id: string;
@@ -21,6 +21,7 @@ const typeIcons: Record<string, { icon: typeof Bell; color: string; bg: string }
   info: { icon: Info, color: "text-blue-600", bg: "bg-blue-50" },
   warning: { icon: AlertTriangle, color: "text-yellow-600", bg: "bg-yellow-50" },
   success: { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
+  message: { icon: MessageSquare, color: "text-indigo-600", bg: "bg-indigo-50" },
   hearing: { icon: Gavel, color: "text-red-600", bg: "bg-red-50" },
   deadline: { icon: Clock, color: "text-orange-600", bg: "bg-orange-50" },
   appointment: { icon: Calendar, color: "text-purple-600", bg: "bg-purple-50" },
@@ -28,9 +29,16 @@ const typeIcons: Record<string, { icon: typeof Bell; color: string; bg: string }
 };
 
 // Generate a short notification sound using Web Audio API
-function playNotificationSound(priority: string = "normal") {
+async function playNotificationSound(priority: string = "normal"): Promise<boolean> {
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return false;
+
+    const ctx = new AudioContext();
+    if (ctx.state === "suspended") {
+      await ctx.resume();
+    }
+
     const gain = ctx.createGain();
     gain.connect(ctx.destination);
     gain.gain.value = 0.15;
@@ -56,9 +64,12 @@ function playNotificationSound(priority: string = "normal") {
       osc.stop(ctx.currentTime + 0.25);
     }
 
-    setTimeout(() => ctx.close(), 1000);
+    setTimeout(() => {
+      ctx.close().catch(() => undefined);
+    }, 1000);
+    return true;
   } catch {
-    // Audio not available - silently ignore
+    return false;
   }
 }
 
@@ -78,9 +89,34 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [toasts, setToasts] = useState<Notification[]>([]);
+  const [audioBlocked, setAudioBlocked] = useState(false);
   const seenIdsRef = useRef<Set<string>>(new Set());
   const isFirstLoadRef = useRef(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const audioUnlockedRef = useRef(false);
+
+  // Unlock audio on first user interaction to satisfy browser autoplay policies
+  useEffect(() => {
+    const unlockAudio = async () => {
+      if (audioUnlockedRef.current) return;
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+
+      try {
+        const ctx = new AudioContext();
+        if (ctx.state === "suspended") {
+          await ctx.resume();
+        }
+        await ctx.close();
+        audioUnlockedRef.current = true;
+      } catch {
+        // ignore if audio cannot be unlocked
+      }
+    };
+
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", unlockAudio);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -111,7 +147,8 @@ export default function NotificationBell() {
         );
         if (newOnes.length > 0) {
           setToasts((prev) => [...prev, ...newOnes.slice(0, 3)]);
-          playNotificationSound(newOnes[0].priority);
+          const played = await playNotificationSound(newOnes[0].priority);
+          if (!played) setAudioBlocked(true);
         }
       }
 
@@ -123,11 +160,29 @@ export default function NotificationBell() {
     }
   }, []);
 
-  // Poll every 30 seconds
+  // Poll every 30 seconds and refresh on focus/visibility change
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, POLL_INTERVAL);
-    return () => clearInterval(interval);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications();
+      }
+    };
+
+    const handleWindowFocus = () => {
+      fetchNotifications();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
   }, [fetchNotifications]);
 
   // Mark single as read
@@ -190,21 +245,28 @@ export default function NotificationBell() {
         {isOpen && (
           <div className="absolute left-0 top-full mt-2 w-96 max-h-[500px] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <Bell className="w-4 h-4 text-primary" />
-                <h3 className="font-bold text-sm text-primary">الإشعارات</h3>
+            <div className="px-4 py-3 border-b border-gray-100 flex flex-col gap-2 flex-shrink-0">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-primary" />
+                  <h3 className="font-bold text-sm text-primary">الإشعارات</h3>
+                  {unreadCount > 0 && (
+                    <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-medium">
+                      {unreadCount} جديد
+                    </span>
+                  )}
+                </div>
                 {unreadCount > 0 && (
-                  <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-medium">
-                    {unreadCount} جديد
-                  </span>
+                  <button onClick={markAllRead} className="text-xs text-text-light hover:text-primary transition-colors flex items-center gap-1">
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    تحديد الكل كمقروء
+                  </button>
                 )}
               </div>
-              {unreadCount > 0 && (
-                <button onClick={markAllRead} className="text-xs text-text-light hover:text-primary transition-colors flex items-center gap-1">
-                  <CheckCheck className="w-3.5 h-3.5" />
-                  تحديد الكل كمقروء
-                </button>
+              {audioBlocked && (
+                <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                  تعذر تشغيل صوت الإشعارات. تأكد من السماح لتشغيل الصوت في المتصفح.
+                </div>
               )}
             </div>
 

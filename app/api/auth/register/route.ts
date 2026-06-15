@@ -129,7 +129,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // Send verification email (non bloquant)
+    // Send verification email (non blocking)
     let emailSent = false;
     try {
       emailSent = await sendVerificationEmail(email, verificationToken, name);
@@ -137,11 +137,29 @@ export async function POST(request: Request) {
       console.error("Erreur lors de l'envoi d'email:", emailError);
     }
 
-    // L'inscription réussit même si l'email échoue
+    // If verification email failed, activate and verify immediately so the user can log in.
+    if (!emailSent) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          isEmailVerified: true,
+          emailVerificationToken: null,
+          emailVerificationTokenExpiry: null,
+        },
+      });
+
+      if (defaultPlan) {
+        await prisma.subscription.updateMany({
+          where: { userId: user.id },
+          data: { isActive: true },
+        });
+      }
+    }
+
     return NextResponse.json({
-      message: emailSent 
+      message: emailSent
         ? "تم إنشاء الحساب بنجاح. يرجى تفعيل بريدك الإلكتروني"
-        : "تم إنشاء الحساب بنجاح. لم نتمكن من إرسال بريد التفعيل، يرجى الاتصال بالدعم",
+        : "تم إنشاء الحساب بنجاح. لم نتمكن من إرسال بريد التفعيل، تم تفعيل حسابك تلقائياً.",
       email: user.email,
       emailSent: emailSent,
     }, { status: 201 });

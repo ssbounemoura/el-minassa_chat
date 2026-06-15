@@ -41,6 +41,12 @@ model User {
   conversationParticipants      ConversationParticipant[]
   chatSessions                  ChatSession[]
   aiConversations               AiConversation[]
+  
+  // Relations NOTAIRE
+  actesNotaries                 ActeNotarie[]             @relation("NotaireActes")
+  registres                     RegistreNotariae[]        @relation("NotaireRegistres")
+  aides                         AideNotaire[]             @relation("NotaireAides")
+  templates                     TemplateActe[]            @relation("NotaireTemplates")
 
   @@map("users")
 }
@@ -186,7 +192,7 @@ model Dossier {
 }
 
 // ============================================
-// MODÈLE RENDEZ-VOUS (CORRIGÉ - UNE SEULE FOIS AVEC time)
+// MODÈLE RENDEZ-VOUS
 // ============================================
 model RendezVous {
   id          String    @id @default(cuid())
@@ -197,7 +203,7 @@ model RendezVous {
   title       String
   description String?
   date        DateTime
-  time        String?   // ← AJOUTÉ : heure du rendez-vous
+  time        String?
   duration    Int       @default(30)
   location    String?
   isDone      Boolean   @default(false)
@@ -309,6 +315,179 @@ model AiConversation {
   updatedAt DateTime @updatedAt
 
   @@map("ai_conversations")
+}
+
+// ============================================
+// MODÈLE ACTE NOTARIÉ (pour NOTAIRE)
+// ============================================
+model ActeNotarie {
+  id                String      @id @default(cuid())
+  userId            String
+  user              User        @relation("NotaireActes", fields: [userId], references: [id])
+  
+  // Informations de base
+  numeroActe        String      @unique
+  typeActe          String      // "VENTE", "DONATION", "MARIAGE", "SUCCESSION", "HYPOTHEQUE", "BAIL", etc.
+  dateActe          DateTime
+  dateEnregistrement DateTime?
+  
+  // Client principal (champ supprimé : parties de type String)
+  clientPrincipal   String?
+  clientId          String?
+  client            Client?     @relation(fields: [clientId], references: [id])
+  
+  // Détails légaux
+  description       String?
+  montantTransaction Float?
+  references        String?     // Numéros de références légales
+  
+  // Statut et traçabilité
+  status            String      @default("EN_COURS")  // EN_COURS, SIGNE, ENREGISTRE, ARCHIVE
+  dateSignature     DateTime?
+  signatureDigitale String?     // Hash de signature
+  nombrePages       Int?
+  
+  // Documents
+  documentUrl       String?
+  certificats       String?     // JSON array of certificate URLs
+  
+  // Registre et archivage
+  numeroRegistre    String?
+  lieuRegistre      String?
+  controleLegalite  Boolean     @default(false)
+  remarques         String?
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  // Relations
+  registreNotariae  RegistreNotariae?
+  parties           Partie[]      @relation("ActeParties")  // Relation conservée
+  
+  @@index([userId])
+  @@index([numeroActe])
+  @@index([status])
+  @@map("actes_notaries")
+}
+
+// ============================================
+// MODÈLE REGISTRE NOTARIAL (pour NOTAIRE)
+// ============================================
+model RegistreNotariae {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation("NotaireRegistres", fields: [userId], references: [id])
+  acteId        String        @unique
+  acte          ActeNotarie   @relation(fields: [acteId], references: [id], onDelete: Cascade)
+  
+  // Numérotation
+  numeroRegistre String       @unique
+  sousNumero    Int           @default(0)
+  volume        Int?
+  page          Int?
+  
+  // Dates légales
+  dateEnregistrement DateTime
+  dateExpedition    DateTime?
+  
+  // Statut légal
+  statusLegal   String        @default("ENREGISTRE")  // ENREGISTRE, TRANSCRIT, RETIRE, ANNULE
+  fraisRegistre Float?
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  @@index([numeroRegistre])
+  @@index([userId])
+  @@map("registre_notariae")
+}
+
+// ============================================
+// MODÈLE PARTIE (Signataire) - pour NOTAIRE
+// ============================================
+model Partie {
+  id            String      @id @default(cuid())
+  acteId        String
+  acte          ActeNotarie @relation("ActeParties", fields: [acteId], references: [id], onDelete: Cascade)
+  
+  // Informations
+  nomComplet    String
+  qualite       String      // VENDEUR, ACQUEREUR, DONOR, DONATAIRE, etc.
+  nationalite   String?
+  dateNaissance DateTime?
+  numIdNationale String?
+  
+  // Adresse
+  adresseComplete String?
+  wilaya        String?
+  commune       String?
+  
+  // Contact
+  telephone     String?
+  email         String?
+  
+  // Signature
+  dateSig       DateTime?
+  signatureDigi String?     // Empreinte digitale ou signature électronique
+  temoins       String?     // JSON: noms des témoins
+  
+  createdAt     DateTime    @default(now())
+  
+  @@index([acteId])
+  @@map("parties")
+}
+
+// ============================================
+// MODÈLE AIDE NOTAIRE (pour NOTAIRE)
+// ============================================
+model AideNotaire {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation("NotaireAides", fields: [userId], references: [id])
+  
+  // Informations
+  titre         String
+  description   String
+  contenu       String    // Markdown format
+  typeActe      String?   // Type d'acte concerné
+  categorie     String    // PROCEDURE, LEGAL, TARIF, MODELE, DELAI, EXCEPTION
+  
+  // Mise à jour
+  dateValidation DateTime @default(now())
+  dateModification DateTime @updatedAt
+  
+  createdAt     DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([categorie])
+  @@map("aides_notaire")
+}
+
+// ============================================
+// MODÈLE TEMPLATE DOCUMENT NOTAIRE
+// ============================================
+model TemplateActe {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation("NotaireTemplates", fields: [userId], references: [id])
+  
+  // Identifiant
+  nom           String
+  typeActe      String    // VENTE, DONATION, etc.
+  description   String?
+  
+  // Contenu
+  contenuTemplate String  // Markdown avec placeholders {{nomClient}}, etc.
+  champs        String    // JSON: liste des champs
+  
+  // Statut
+  isActive      Boolean   @default(true)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([userId])
+  @@map("template_actes")
 }
 
 // ============================================

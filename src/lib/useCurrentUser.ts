@@ -8,6 +8,9 @@ type CurrentUser = {
   email: string;
   role: string;
   officeName?: string | null;
+  wilayaId?: string | null;
+  customWilaya?: string | null;
+  wilayaName?: string | null;
 };
 
 export function useCurrentUser() {

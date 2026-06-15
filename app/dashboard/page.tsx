@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
   Scale, 
@@ -48,6 +49,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
@@ -60,6 +62,12 @@ export default function DashboardPage() {
         const userData = await userRes.json();
         if (userData.user) {
           setUserName(userData.user.name || userData.user.email?.split("@")[0] || "Utilisateur");
+          
+          // Rediriger les notaires vers leur dashboard
+          if (userData.user.role === "NOTAIRE") {
+            router.push("/dashboard/notaire");
+            return;
+          }
         }
 
         // Charger les statistiques
@@ -76,7 +84,7 @@ export default function DashboardPage() {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [router]);
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { label: string; color: string }> = {

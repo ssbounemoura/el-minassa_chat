@@ -18,9 +18,10 @@ const defaultSettings = {
 async function readSettings() {
   try {
     const data = await fs.readFile(settingsPath, "utf-8");
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    return { ...defaultSettings, ...parsed };
   } catch {
-    return defaultSettings;
+    return { ...defaultSettings };
   }
 }
 
@@ -37,24 +38,42 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ error: "بيانات غير صالحة" }, { status: 400 });
+    }
+
     const currentSettings = await readSettings();
 
     const newSettings = {
       ...currentSettings,
-      ...body,
-      // Validation & sanitization
-      aiTemperature: parseFloat(body.aiTemperature) ?? currentSettings.aiTemperature,
-      aiMaxTokens: parseInt(body.aiMaxTokens) ?? currentSettings.aiMaxTokens,
-      maintenanceMode: !!body.maintenanceMode,
+      ...(body.systemName !== undefined && { systemName: String(body.systemName).trim() }),
+      ...(body.maintenanceMode !== undefined && { maintenanceMode: body.maintenanceMode === true }),
+      ...(body.contactEmail !== undefined && { contactEmail: String(body.contactEmail).trim() }),
+      ...(body.contactPhone !== undefined && { contactPhone: String(body.contactPhone).trim() }),
+      ...(body.contactAddress !== undefined && { contactAddress: String(body.contactAddress).trim() }),
+      ...(body.aiModel !== undefined && { aiModel: String(body.aiModel).trim() }),
+      ...(body.aiTemperature !== undefined && {
+        aiTemperature: Math.min(1.2, Math.max(0, parseFloat(String(body.aiTemperature)) || currentSettings.aiTemperature)),
+      }),
+      ...(body.aiMaxTokens !== undefined && {
+        aiMaxTokens: Math.min(8192, Math.max(256, parseInt(String(body.aiMaxTokens)) || currentSettings.aiMaxTokens)),
+      }),
     };
 
-    // Write back to settings.json
     await fs.mkdir(path.dirname(settingsPath), { recursive: true });
+    
+    // Direct write to avoid Windows EPERM / EBUSY rename lock errors from file watchers
     await fs.writeFile(settingsPath, JSON.stringify(newSettings, null, 2), "utf-8");
 
-    return NextResponse.json({ success: true, settings: newSettings });
+    console.log("Settings saved — maintenanceMode:", newSettings.maintenanceMode);
+
+    const response = NextResponse.json({ success: true, settings: newSettings });
+
+    return response;
   } catch (error) {
     console.error("Save settings error:", error);
-    return NextResponse.json({ error: "خطأ في حفظ الإعدادات" }, { status: 500 });
+    // Explicitly return a friendlier message so the user doesn't see raw EPERM, but also return success=false
+    return NextResponse.json({ success: false, error: "فشل حفظ الملف. الرجاء المحاولة مرة أخرى." }, { status: 500 });
   }
 }

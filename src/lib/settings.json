@@ -2,7 +2,7 @@
   "systemName": "المنصة القانونية الجزائرية",
   "maintenanceMode": false,
   "contactEmail": "contact@el-minassa.com",
-  "contactPhone": "0676 212 922",
+  "contactPhone": "0676212922",
   "contactAddress": "Rue Berdoudi Bachir, El Arrouch, Skikda",
   "aiModel": "google/gemma-4-31b-it:free",
   "aiTemperature": 0.4,

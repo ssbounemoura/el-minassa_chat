@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Settings, Save, Database, ShieldAlert, KeyRound, Loader2, Sparkles, CheckCircle, AlertTriangle
 } from "lucide-react";
+import { showToast } from "@/components/notifications/ToastContainer";
 
 interface SystemSettings {
   systemName: string;
@@ -27,7 +28,6 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -36,6 +36,8 @@ export default function AdminSettingsPage() {
         if (res.ok) {
           const data = await res.json();
           setSettings(data.settings);
+        } else {
+          console.error("Failed to fetch settings:", res.status);
         }
       } catch (err) {
         console.error("Error fetching settings:", err);
@@ -50,23 +52,38 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     if (!settings) return;
     setSaving(true);
-    setMessage(null);
+
+    // Build explicit payload — ensure maintenanceMode is a real boolean
+    const payload = {
+      systemName: settings.systemName,
+      maintenanceMode: settings.maintenanceMode === true,
+      contactEmail: settings.contactEmail,
+      contactPhone: settings.contactPhone,
+      contactAddress: settings.contactAddress,
+      aiModel: settings.aiModel,
+      aiTemperature: settings.aiTemperature,
+      aiMaxTokens: settings.aiMaxTokens,
+    };
 
     try {
       const res = await fetch("/api/admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(payload),
       });
+
       const data = await res.json();
-      if (res.ok) {
-        setMessage({ type: "success", text: "تم حفظ الإعدادات بنجاح!" });
+
+      if (res.ok && data.success) {
+        showToast("نجاح", "تم حفظ الإعدادات بنجاح!", "success");
+        // Update local state with server response to confirm persistence
         setSettings(data.settings);
       } else {
-        setMessage({ type: "error", text: data.error || "حدث خطأ أثناء حفظ الإعدادات" });
+        showToast("خطأ", data.error || "حدث خطأ أثناء حفظ الإعدادات", "error");
       }
-    } catch {
-      setMessage({ type: "error", text: "فشل الاتصال بالخادم لحفظ الإعدادات" });
+    } catch (err) {
+      console.error("Save error:", err);
+      showToast("خطأ", "فشل الاتصال بالخادم لحفظ الإعدادات", "error");
     } finally {
       setSaving(false);
     }
@@ -102,21 +119,6 @@ export default function AdminSettingsPage() {
         </h1>
         <p className="text-text-light text-sm">إدارة معلومات المنصة وخيارات المساعد الذكي وحالة النظام</p>
       </div>
-
-      {/* Message feedback */}
-      {message && (
-        <div
-          className={`px-4 py-3 rounded-xl text-sm flex items-center gap-3 border ${
-            message.type === "success"
-              ? "bg-green-50 border-green-200 text-green-700"
-              : "bg-red-50 border-red-200 text-red-700"
-          }`}
-        >
-          {message.type === "success" ? <CheckCircle className="w-5 h-5 text-green-500" /> : <AlertTriangle className="w-5 h-5 text-red-500" />}
-          <span>{message.text}</span>
-          <button className="mr-auto font-bold" onClick={() => setMessage(null)}>×</button>
-        </div>
-      )}
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Platform basic details */}
@@ -238,13 +240,22 @@ export default function AdminSettingsPage() {
               <p className="text-xs text-text-light max-w-md">
                 عند التفعيل، سيتم حظر المستخدمين من دخول لوحات التحكم الخاصة بهم وعرض صفحة تفيد بأن النظام تحت الصيانة الجارية.
               </p>
+              <p className="text-xs font-medium mt-1">
+                الحالة الحالية:{" "}
+                <span className={settings.maintenanceMode ? "text-danger font-bold" : "text-success font-bold"}>
+                  {settings.maintenanceMode ? "🔴 وضع الصيانة مفعّل" : "🟢 الموقع يعمل بشكل طبيعي"}
+                </span>
+              </p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
               <input
                 type="checkbox"
                 className="sr-only peer"
                 checked={settings.maintenanceMode}
-                onChange={(e) => setSettings({ ...settings, maintenanceMode: e.target.checked })}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setSettings((prev) => prev ? { ...prev, maintenanceMode: checked } : prev);
+                }}
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-danger"></div>
             </label>
@@ -254,7 +265,8 @@ export default function AdminSettingsPage() {
         {/* Save button */}
         <div className="flex justify-end">
           <button type="submit" disabled={saving} className="btn-primary text-sm flex items-center gap-2">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4- h-4" />} حفظ الإعدادات
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? "جاري الحفظ..." : "حفظ الإعدادات"}
           </button>
         </div>
       </form>
@@ -272,6 +284,7 @@ export default function AdminSettingsPage() {
             </p>
           </div>
           <button
+            type="button"
             onClick={handleBackup}
             className="btn-outline text-sm flex items-center gap-2 hover:bg-primary-light hover:text-white"
           >
