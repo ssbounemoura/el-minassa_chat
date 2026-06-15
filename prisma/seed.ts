@@ -150,6 +150,24 @@ async function main() {
   });
   console.log(`Requested Notaire account created/updated: ${azhocine.email}`);
 
+  // Seed Huissier (Officer of justice - حاسب العدل)
+  const huissierPassword = await bcrypt.hash("Huissier2026!", 10);
+  const huissier = await prisma.user.upsert({
+    where: { email: "huissier@elminassa.dz" },
+    update: { password: huissierPassword, isEmailVerified: true },
+    create: {
+      name: "علي محمد - حاسب عدل",
+      email: "huissier@elminassa.dz",
+      password: huissierPassword,
+      role: "HUISSIER",
+      officeName: "مكتب حاسب العدل",
+      phone: "+213 555 456 789",
+      isActive: true,
+      isEmailVerified: true,
+    },
+  });
+  console.log(`Huissier account created/updated: ${huissier.email}`);
+
   // Removed sample mock users, clients, dossiers and notifications from seed.
 
   // Seed Legal Texts

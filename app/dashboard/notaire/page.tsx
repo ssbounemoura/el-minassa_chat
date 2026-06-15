@@ -228,9 +228,14 @@ export default function NotairePage() {
                   العد التنازلي: <span className="font-semibold">{countdown}</span>
                 </p>
               ) : null}
-              {subscription.endDate ? (
-                <p className="mt-1 text-sm text-slate-600">ينتهي في {new Date(subscription.endDate).toLocaleDateString("ar-DZ", { year: "numeric", month: "long", day: "numeric" })}</p>
-              ) : null}
+              {subscription.endDate && (
+                <p className="mt-1 text-sm text-slate-600">
+                  ينتهي في {(() => {
+                    const endDateStr = subscription.endDate;
+                    return new Date(endDateStr).toLocaleDateString("ar-DZ", { year: "numeric", month: "long", day: "numeric" });
+                  })()}
+                </p>
+              )}
               <p className="mt-1 text-sm text-slate-600">
                 {subscription.daysRemaining <= 7
                   ? "أنت الآن في آخر أسبوع من التجربة. قم بالترقية الآن لتجنب أي انقطاع في الخدمة."
