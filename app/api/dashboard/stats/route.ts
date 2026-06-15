@@ -34,6 +34,39 @@ export async function GET() {
       },
     });
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { createdAt: true },
+    });
+
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId },
+      include: { plan: true },
+    });
+
+    let subscriptionDaysRemaining: number | null = null;
+    let endDate: Date | null = null;
+    let planName = "اشتراك مجاني";
+    let isActive = false;
+
+    if (subscription?.endDate) {
+      endDate = subscription.endDate;
+      planName = subscription.plan.name;
+      isActive = subscription.isActive;
+      const remainingMs = endDate.getTime() - new Date().getTime();
+      subscriptionDaysRemaining = remainingMs > 0 ? Math.ceil(remainingMs / (1000 * 60 * 60 * 24)) : 0;
+    } else if (user?.createdAt) {
+      const trialEndDate = new Date(user.createdAt);
+      trialEndDate.setDate(trialEndDate.getDate() + 30);
+      const remainingMs = trialEndDate.getTime() - new Date().getTime();
+      if (remainingMs > 0) {
+        endDate = trialEndDate;
+        subscriptionDaysRemaining = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
+        planName = "فترة تجريبية مجانية";
+        isActive = true;
+      }
+    }
+
     return NextResponse.json({
       totalClients,
       totalDossiers,
@@ -44,6 +77,14 @@ export async function GET() {
         title: r.title,
         date: r.date.toISOString(),
       })),
+      subscription: endDate
+        ? {
+            planName,
+            endDate: endDate.toISOString(),
+            isActive,
+            daysRemaining: subscriptionDaysRemaining,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Dashboard stats error:", error);

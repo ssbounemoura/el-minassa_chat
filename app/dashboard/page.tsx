@@ -46,6 +46,12 @@ interface DashboardStats {
     time: string;
     type: string;
   }[];
+  subscription?: {
+    planName: string;
+    endDate: string;
+    isActive: boolean;
+    daysRemaining: number | null;
+  } | null;
 }
 
 export default function DashboardPage() {
@@ -137,6 +143,31 @@ export default function DashboardPage() {
           جدولة موعد جديد
         </Link>
       </div>
+
+      {/* Trial / Subscription Banner */}
+      {stats?.subscription?.daysRemaining && stats.subscription.daysRemaining > 0 && (
+        <div className={`rounded-2xl p-5 shadow-sm border ${stats.subscription.daysRemaining <= 7 ? "border-red-200 bg-red-50" : "border-blue-200 bg-blue-50"}`}>
+          <div className="flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
+            <div>
+              <p className="text-sm font-semibold text-gray-700">عرض تجريبي مجاني 30 يوم</p>
+              <p className="mt-2 text-lg font-bold text-gray-900">
+                تبقى لك {stats.subscription.daysRemaining} يوم{stats.subscription.daysRemaining === 1 ? "" : "ًا"} من الفترة التجريبية
+              </p>
+              <p className="mt-1 text-sm text-gray-600">
+                {stats.subscription.daysRemaining <= 7
+                  ? "أنت الآن في آخر أسبوع من الفترة التجريبية. ركب خطة مدفوعة الآن لتفادي انقطاع الخدمة."
+                  : "استفد من هذه الفترة لمتابعة ملفاتك ومواعيدك ثم اختر الاشتراك الأنسب لك."}
+              </p>
+            </div>
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-primary shadow-sm hover:bg-primary/5 transition-all"
+            >
+              <ArrowRight className="w-4 h-4" /> الترقية إلى اشتراك مدفوع
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

@@ -117,7 +117,7 @@ export async function POST(request: Request) {
     // Create subscription if plan exists
     if (defaultPlan) {
       const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 14); // 14-day free trial
+      endDate.setDate(endDate.getDate() + 30); // 30-day free trial
 
       await prisma.subscription.create({
         data: {

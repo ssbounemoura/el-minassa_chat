@@ -67,7 +67,6 @@ export async function POST(request: Request) {
       clientId,
       montantTransaction,
       description,
-      parties,
     } = data;
 
     // Vérifier l'unicité du numéro d'acte
@@ -91,7 +90,6 @@ export async function POST(request: Request) {
         clientId,
         montantTransaction,
         description,
-        parties: JSON.stringify(parties || []),
         status: "EN_COURS",
       },
       include: {

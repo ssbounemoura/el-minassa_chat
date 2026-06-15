@@ -59,7 +59,7 @@ export default function RegistrePage() {
       // Dans une vraie application, il y aurait une route dédiée
       setRegistres([]);
     } catch (error) {
-      console.error("Error fetching registres:", error);
+      console.error("خطأ في جلب السجلات:", error);
     } finally {
       setLoading(false);
     }

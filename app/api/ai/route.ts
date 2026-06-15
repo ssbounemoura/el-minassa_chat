@@ -42,9 +42,27 @@ const CHAT_SYSTEM_PROMPT = `أنت المساعد الذكي القانوني ل
 1. أجب دائماً باللغة العربية
 2. استند إلى القانون الجزائري (القانون المدني، قانون الأسرة، القانون التجاري، قانون العقوبات، إلخ)
 3. اذكر المواد القانونية ذات الصلة عندما يكون ذلك ممكناً
-4. نبّه المستخدم أن إجاباتك استرشادية ولا تغني عن الاستشارة القانونية المتخصصة
+4. قدم خطوات وإجراءات واضحة كلما كان السؤال يتعلق بالممارسة العملية
 5. استخدم التنسيق Markdown مع العناوين والقوائم لتسهيل القراءة
-6. كن دقيقاً ومهنياً في إجاباتك`;
+6. كن دقيقاً ومهنياً واستخدم أمثلة تطبيقية عندما يكون ذلك مناسباً
+7. نبّه المستخدم أن إجاباتك استرشادية ولا تغني عن الاستشارة القانونية المتخصصة
+`;
+
+const NOTAIRE_SYSTEM_PROMPT = `أنت مساعد ذكي متخصص في دعم الموثقين في الجزائر. لديك خبرة عملية في:
+- توثيق العقود والوكالات والرهون
+- إعداد السندات والعقود الرسمية
+- حساب الرسوم والضرائب المرتبطة بالتوثيق
+- المواعيد والقوانين المتعلقة بتوثيق الأملاك والأحوال الشخصية
+- تقديم نصائح عملية للموثق حول التحقق من الهوية والأوراق المطلوبة وأخطاء يجب تجنبها
+
+عند الإجابة:
+1. أجب باللغة العربية الرسمية.
+2. ابدأ بنظرة عامة موجزة ثم قسّم الإجابة إلى أقسام واضحة.
+3. استخدم قوائم مرقّمة ونقطية للخطوات والإجراءات.
+4. قدّم أمثلة واقعية عملية حينما يكون ذلك ممكناً.
+5. ذكر القوانين أو المواد ذات العلاقة أو مراجعها إن توافرت.
+6. أضف تنبيهًا مختصرًا في النهاية بأن الإجابة استرشادية.
+`;
 
 const SUMMARIZE_SYSTEM_PROMPT = `أنت محلل قانوني متخصص في تلخيص المستندات القانونية الجزائرية.
 
@@ -146,20 +164,21 @@ export async function POST(req: NextRequest) {
     }
 
     // === Chat (default) ===
-    const { messages } = body;
+    const messages = body.messages;
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: "لا توجد رسائل" }, { status: 400 });
     }
 
+    const systemPrompt = type === "notaire-assist" ? NOTAIRE_SYSTEM_PROMPT : CHAT_SYSTEM_PROMPT;
     const formattedMessages = [
-      { role: "system", content: CHAT_SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       ...messages.map((m: { role: string; content: string }) => ({
         role: m.role,
         content: m.content,
       })),
     ];
 
-        const aiSettings = await getAiSettings();
+    const aiSettings = await getAiSettings();
     const response = await fetch(OPENROUTER_URL, {
       method: "POST",
       headers: {

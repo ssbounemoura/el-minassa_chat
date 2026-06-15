@@ -41,8 +41,11 @@ export default function NouveauActePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
+          numeroActe: form.numeroActe,
+          typeActe: form.typeActe,
+          dateActe: form.dateActe,
           montantTransaction: form.montantTransaction ? parseFloat(form.montantTransaction) : 0,
+          description: form.description,
         }),
       });
 
@@ -54,7 +57,7 @@ export default function NouveauActePage() {
         alert(data.error || "خطأ في إنشاء العقد");
       }
     } catch (error) {
-      console.error("Error creating acte:", error);
+      console.error("خطأ في إنشاء العقد:", error);
       alert("فشل الاتصال بالخادم");
     } finally {
       setLoading(false);

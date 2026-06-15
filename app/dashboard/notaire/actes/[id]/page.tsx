@@ -71,7 +71,7 @@ export default function ActeDetailsPage() {
         });
       }
     } catch (error) {
-      console.error("Error fetching acte:", error);
+      console.error("خطأ في جلب العقد:", error);
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ export default function ActeDetailsPage() {
         alert("خطأ في الحفظ");
       }
     } catch (error) {
-      console.error("Error saving:", error);
+      console.error("خطأ في الحفظ:", error);
       alert("فشل الاتصال بالخادم");
     } finally {
       setSaving(false);
@@ -120,7 +120,7 @@ export default function ActeDetailsPage() {
         alert("خطأ في إضافة الطرف");
       }
     } catch (error) {
-      console.error("Error adding partie:", error);
+      console.error("خطأ في إضافة الطرف:", error);
       alert("فشل الاتصال بالخادم");
     }
   };
@@ -148,7 +148,7 @@ export default function ActeDetailsPage() {
         alert(data.error || "خطأ في التسجيل");
       }
     } catch (error) {
-      console.error("Error registering:", error);
+      console.error("خطأ في تسجيل العقد:", error);
       alert("فشل الاتصال بالخادم");
     }
   };
@@ -173,6 +173,22 @@ export default function ActeDetailsPage() {
       </div>
     );
   }
+
+  const TYPE_LABELS: Record<string, string> = {
+    VENTE: "عقد بيع",
+    DONATION: "عقد هبة",
+    MARIAGE: "عقد زواج",
+    SUCCESSION: "عقد توزيع التركة",
+    HYPOTHEQUE: "عقد رهن",
+    BAIL: "عقد إيجار",
+  };
+
+  const STATUS_LABELS: Record<string, string> = {
+    EN_COURS: "قيد المعالجة",
+    SIGNE: "موقعة",
+    ENREGISTRE: "مسجلة",
+    ARCHIVE: "مؤرشفة",
+  };
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -200,7 +216,7 @@ export default function ActeDetailsPage() {
               </div>
             </div>
             <div className={`px-4 py-2 rounded-full font-medium ${getStatusColor(acte.status)}`}>
-              {acte.status}
+              {STATUS_LABELS[acte.status] || acte.status}
             </div>
           </div>
         </div>
@@ -220,7 +236,7 @@ export default function ActeDetailsPage() {
                 </div>
                 <div>
                   <p className="text-slate-600 text-sm mb-1">نوع العقد</p>
-                  <p className="font-semibold text-slate-900">{acte.typeActe}</p>
+                  <p className="font-semibold text-slate-900">{TYPE_LABELS[acte.typeActe] || acte.typeActe}</p>
                 </div>
                 <div>
                   <p className="text-slate-600 text-sm mb-1">التاريخ</p>

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Scale,
   Shield,
@@ -32,7 +33,7 @@ import {
   Gift,
   Rocket,
 } from "lucide-react";
-import ChatbotWidget from "@/components/ChatbotWidget";
+const ChatbotWidget = dynamic(() => import("@/components/ChatbotWidget"), { ssr: false });
 import SplashScreen from "@/components/SplashScreen";
 
 const features = [
@@ -93,28 +94,25 @@ const testimonials = [
 
 export default function LandingPage() {
   const [showSplash, setShowSplash] = useState(true);
-  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
-    
     const splashSeen = sessionStorage.getItem("splash-shown");
-    
+
     if (splashSeen) {
       setShowSplash(false);
-    } else {
-      const timer = setTimeout(() => {
-        setShowSplash(false);
-        sessionStorage.setItem("splash-shown", "true");
-      }, 2500);
-      
-      return () => clearTimeout(timer);
+      return;
     }
+
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+      sessionStorage.setItem("splash-shown", "true");
+    }, 2500);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  // Pendant le splash, ne rien afficher d'autre
-  if (!isMounted || showSplash) {
-    return <>{isMounted && showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}</>;
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
   }
 
   return (
@@ -145,54 +143,11 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Bannière offre de lancement */}
-      <Link href="/special-offer" className="block">
-        <div className="bg-gradient-to-r from-red-600 via-amber-500 to-red-600 text-white overflow-hidden relative group cursor-pointer">
-          <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-          <div className="max-w-7xl mx-auto px-4 py-3 text-center relative z-10">
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <span className="bg-white text-red-600 text-xs font-bold px-2 py-1 rounded-full animate-pulse">
-                🎁 عرض خاص
-              </span>
-              <span className="text-lg font-bold">خصم 50%</span>
-              <span className="text-sm">على جميع الاشتراكات خلال أول 30 يوماً</span>
-              <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
-                الخصم يطبق تلقائياً عند الاشتراك
-              </span>
-              <span className="text-sm font-semibold group-hover:translate-x-1 transition-transform">
-                اكتشف العرض ←
-              </span>
-            </div>
-          </div>
-        </div>
-      </Link>
-
-      {/* Bandeau nouveauté */}
-      <section className="bg-gradient-to-r from-amber-50 to-primary/5 border-b border-amber-200">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">🆕 جديد</span>
-              <p className="text-sm text-gray-700">
-                ⚖️ بوابة التقديم والتأجيل – أطلقت المنصة خدمة جديدة لإدارة طلبات التأجيل إلكترونياً
-              </p>
-            </div>
-            <Link 
-              href="/portal/reports" 
-              className="text-primary font-semibold text-sm hover:underline flex items-center gap-1"
-            >
-              اكتشف المزيد
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Hero */}
       <section className="relative bg-gradient-to-bl from-primary via-primary-light to-primary-dark text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-72 h-72 bg-secondary rounded-full blur-3xl animate-hero-blob" />
-          <div className="absolute bottom-20 left-20 w-96 h-96 bg-accent rounded-full blur-3xl animate-hero-blob" style={{ animationDelay: "0.3s" }} />
+        <div className="absolute inset-0" style={{ opacity: 0.06 }}>
+          <div className="absolute top-20 right-20 w-72 h-72 bg-secondary rounded-full blur-3xl" />
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-accent rounded-full blur-3xl" style={{ animationDelay: "0.3s" }} />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10">
           <div className="max-w-3xl">
@@ -212,6 +167,7 @@ export default function LandingPage() {
                 اكتشف المميزات
               </a>
             </div>
+            <p className="text-sm mt-3 text-gray-200">تجربة مجانية 30 يوم — لا تحتاج إلى بطاقة بنكية</p>
             <div className="mt-8 flex items-center gap-6 text-sm text-gray-300">
               <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-secondary" /> تجربة مجانية 30 يوم</span>
               <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-secondary" /> بدون بطاقة بنكية</span>
@@ -385,9 +341,9 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {[
-              { name: "الأساسية", price: "4,900", features: ["50 ملف", "100 عميل", "مراسلات", "دعم فني"], popular: false },
-              { name: "الاحترافية", price: "9,900", features: ["200 ملف", "500 عميل", "مراسلات + AI", "مساعد ذكي + تلخيص + بحث دلالي", "تنبيهات حية", "أولوية الدعم"], popular: true },
-              { name: "المؤسسة", price: "19,900", features: ["ملفات غير محدودة", "عملاء غير محدودين", "جميع المميزات", "دعم مخصص", "API"], popular: false },
+              { name: "الأساسية", price: "1200", features: ["50 ملف", "100 عميل", "مراسلات", "دعم فني"], popular: false },
+              { name: "الاحترافية", price: "2200", features: ["200 ملف", "500 عميل", "مراسلات + AI", "مساعد ذكي + تلخيص + بحث دلالي", "تنبيهات حية", "أولوية الدعم"], popular: true },
+              { name: "المؤسسة", price: "5200", features: ["ملفات غير محدودة", "عملاء غير محدودين", "جميع المميزات", "دعم مخصص", "API"], popular: false },
             ].map((plan, i) => (
               <div key={i} className={`card relative ${plan.popular ? "border-secondary border-2 shadow-lg scale-105" : ""}`}>
                 {plan.popular && (
@@ -396,6 +352,7 @@ export default function LandingPage() {
                   </span>
                 )}
                 <h3 className="text-xl font-bold text-primary mb-2">{plan.name}</h3>
+                <p className="text-xs uppercase tracking-[0.24em] text-secondary font-semibold mb-3">30 يوم تجربة مجانية</p>
                 <div className="mb-6">
                   <span className="text-3xl font-bold text-primary">{plan.price}</span>
                   <span className="text-text-light text-sm"> د.ج / شهر</span>
@@ -409,7 +366,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <Link href="/register" className={plan.popular ? "btn-secondary w-full text-center block" : "btn-outline w-full text-center block"}>
-                  اشترك الآن
+                  ابدأ التجربة المجانية
                 </Link>
               </div>
             ))}

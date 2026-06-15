@@ -160,7 +160,7 @@ model Client {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   dossiers   Dossier[]
-  actesNotaries ActeNotarie[]  // ← Relation inverse vers les actes notariés
+  actesNotaries ActeNotarie[]
 
   @@map("clients")
 }

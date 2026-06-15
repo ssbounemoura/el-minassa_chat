@@ -37,7 +37,7 @@ export default function ActesPage() {
         setActes(data.actes);
       }
     } catch (error) {
-      console.error("Erreur chargement actes:", error);
+      console.error("خطأ في تحميل العقود:", error);
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,7 @@ export default function ActesPage() {
         alert("خطأ في حذف العقد");
       }
     } catch (error) {
-      console.error("Error deleting acte:", error);
+      console.error("خطأ في حذف العقد:", error);
       alert("فشل الاتصال بالخادم");
     }
   };

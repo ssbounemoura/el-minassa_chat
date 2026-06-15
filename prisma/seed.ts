@@ -113,6 +113,40 @@ async function main() {
   });
   console.log(`SuperAdmin password updated for: ${admin.email}`);
 
+  // Seed Test Notaire
+  const notairePassword = await bcrypt.hash("Notaire2026!", 10);
+  const notaire = await prisma.user.upsert({
+    where: { email: "notaire@elminassa.dz" },
+    update: { password: notairePassword },
+    create: {
+      name: "محمد بن موسى - موثق",
+      email: "notaire@elminassa.dz",
+      password: notairePassword,
+      role: "NOTAIRE",
+      officeName: "مكتب التوثيق الجزائري",
+      phone: "+213 555 123 456",
+      isActive: true,
+    },
+  });
+  console.log(`Notaire account created/updated: ${notaire.email}`);
+
+  // Seed Requested Notaire (user-provided)
+  const azhocinePassword = await bcrypt.hash("azerty21400", 10);
+  const azhocine = await prisma.user.upsert({
+    where: { email: "azhocine@atomicmail.io" },
+    update: { password: azhocinePassword, officeName: "إعداد المستخدم" },
+    create: {
+      name: "A. Zhocine - Notaire",
+      email: "azhocine@atomicmail.io",
+      password: azhocinePassword,
+      role: "NOTAIRE",
+      officeName: "إعداد المستخدم",
+      phone: null,
+      isActive: true,
+    },
+  });
+  console.log(`Requested Notaire account created/updated: ${azhocine.email}`);
+
   // Removed sample mock users, clients, dossiers and notifications from seed.
 
   // Seed Legal Texts
