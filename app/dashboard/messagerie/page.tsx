@@ -256,7 +256,8 @@ export default function MessageriePage() {
       }
 
       const updatedConversations = await fetchConversations();
-      const newConv = updatedConversations.find((c) => c.id === data.id) || {
+      // ✅ CORRECTION ICI : Ajout du type pour le paramètre 'c'
+      const newConv = updatedConversations.find((c: { id: string }) => c.id === data.id) || {
         id: data.id,
         type: "private",
         title: contact.name,
