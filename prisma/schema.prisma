@@ -145,7 +145,7 @@ model Subscription {
 }
 
 // ============================================
-// MODÈLE CLIENT
+// MODÈLE CLIENT (CORRIGÉ - avec relation inverse)
 // ============================================
 model Client {
   id         String    @id @default(cuid())
@@ -160,6 +160,7 @@ model Client {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   dossiers   Dossier[]
+  actesNotaries ActeNotarie[]  // ← Relation inverse vers les actes notariés
 
   @@map("clients")
 }
@@ -318,7 +319,7 @@ model AiConversation {
 }
 
 // ============================================
-// MODÈLE ACTE NOTARIÉ (pour NOTAIRE)
+// MODÈLE ACTE NOTARIÉ (pour NOTAIRE) - CORRIGÉ
 // ============================================
 model ActeNotarie {
   id                String      @id @default(cuid())
@@ -331,7 +332,7 @@ model ActeNotarie {
   dateActe          DateTime
   dateEnregistrement DateTime?
   
-  // Client principal (champ supprimé : parties de type String)
+  // Client principal (champ parties String supprimé)
   clientPrincipal   String?
   clientId          String?
   client            Client?     @relation(fields: [clientId], references: [id])
@@ -362,7 +363,7 @@ model ActeNotarie {
   
   // Relations
   registreNotariae  RegistreNotariae?
-  parties           Partie[]      @relation("ActeParties")  // Relation conservée
+  parties           Partie[]      @relation("ActeParties")
   
   @@index([userId])
   @@index([numeroActe])
