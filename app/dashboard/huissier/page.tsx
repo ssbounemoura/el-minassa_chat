@@ -348,18 +348,26 @@ export default function HuissierPage() {
       {/* المحتوى الرئيسي */}
       <div className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "mr-64" : "mr-20"}`}>
         {/* الرأس */}
-        <header className="bg-white shadow-sm sticky top-0 z-30">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">مرحباً بك، {user?.name}</h2>
-              <p className="text-sm text-gray-500">لوحة قيادة تنفيذ الأحكام القضائية، الإشعارات، الحجز والتنفيذ العاجل</p>
-            </div>
+        <header className="sticky top-0 z-30 bg-gradient-to-r from-indigo-600 via-indigo-700 to-blue-800 shadow-lg">
+          <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition relative">
-                <Bell className="w-6 h-6 text-gray-600" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <div className="p-3 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                <span className="text-3xl">⚖️</span>
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-white flex items-center gap-2">
+                  مرحباً، {user?.name}
+                  <span className="text-2xl">👋</span>
+                </h2>
+                <p className="text-indigo-100 text-sm mt-1">نظام إدارة التنفيذ والأحكام القضائية</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="p-3 hover:bg-white/10 rounded-lg transition relative backdrop-blur-sm border border-white/20 group">
+                <Bell className="w-6 h-6 text-white group-hover:text-yellow-200 transition" />
+                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-400 rounded-full animate-pulse"></span>
               </button>
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-300 via-orange-300 to-red-400 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg border-2 border-white/30">
                 {user?.name.charAt(0)}
               </div>
             </div>
