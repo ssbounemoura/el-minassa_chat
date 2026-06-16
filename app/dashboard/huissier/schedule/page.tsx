@@ -1,23 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, ArrowRight, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, ArrowRight } from "lucide-react";
 
 export default function HuissierSchedulePage() {
   const daysInMonth = 30;
-  const firstDay = 1;
 
   return (
     <div dir="rtl" className="min-h-screen bg-gray-50">
-      <Header title="جدول المواعيد" />
+      <Header title="مواعيد الحجز والتنفيذ" />
       <main className="max-w-7xl mx-auto px-6 py-8">
         <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center gap-2 mb-6">
           <Plus className="w-5 h-5" />
-          حجز موعد جديد
+          إضافة موعد تنفيذ جديد
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Calendar */}
+          {/* التقويم */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">يونيو 2026</h2>
@@ -41,13 +40,13 @@ export default function HuissierSchedulePage() {
             </div>
           </div>
 
-          {/* Upcoming Events */}
+          {/* الأحداث القادمة */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">المواعيد القادمة</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">مواعيد التنفيذ القادمة</h3>
             <div className="space-y-4">
-              <EventCard date="16 يونيو 2026" title="جلسة قضائية" time="10:00 صباحاً" />
-              <EventCard date="18 يونيو 2026" title="اجتماع مع العميل" time="02:00 مساءً" />
-              <EventCard date="20 يونيو 2026" title="تسليم المستندات" time="03:00 مساءً" />
+              <EventCard date="16 يونيو 2026" title="جلسة حجز تنفيذي" time="10:00 صباحاً" />
+              <EventCard date="18 يونيو 2026" title="متابعة إشعار التنفيذ" time="02:00 مساءً" />
+              <EventCard date="20 يونيو 2026" title="تسليم أمر أداء" time="03:00 مساءً" />
             </div>
           </div>
         </div>

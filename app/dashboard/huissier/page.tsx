@@ -30,11 +30,19 @@ import {
 interface Acte {
   id: string;
   numero: string;
-  type: string;
+  type?: string;
+  clientName?: string;
+  referenceNumber?: string;
+  executionType: string;
   dateCreation: string;
+  dueDate?: string;
   status: string;
   montant?: number;
-  clientName?: string;
+  creditorName?: string;
+  debtorName?: string;
+  district?: string;
+  asset?: string;
+  tribunal?: string;
 }
 
 interface Stats {
@@ -111,9 +119,9 @@ export default function HuissierPage() {
           setActes(data.actes);
           const stats = {
             totalActes: data.actes.length,
-            actesEnCours: data.actes.filter((a: Acte) => a.status === "في_الانتظار").length,
-            actesSignes: data.actes.filter((a: Acte) => a.status === "موقعة").length,
-            actesEnregistres: data.actes.filter((a: Acte) => a.status === "مسجلة").length,
+            actesEnCours: data.actes.filter((a: Acte) => a.status === "قيد_التنفيذ").length,
+            actesSignes: data.actes.filter((a: Acte) => a.status === "تم_التبليغ").length,
+            actesEnregistres: data.actes.filter((a: Acte) => a.status === "تم_الإنجاز").length,
             montantTotal: data.actes.reduce((sum: number, a: Acte) => sum + (a.montant || 0), 0),
           };
           setStats(stats);
@@ -147,7 +155,7 @@ export default function HuissierPage() {
 
   const handleUpload = async () => {
     if (!selectedFile || !uploadTitle) {
-      setUploadError("الرجاء إدخال اسم الملف واختيار ملف");
+      setUploadError("الرجاء إدخال رقم الإشعار التنفيذي واختيار ملف");
       return;
     }
 
@@ -196,16 +204,21 @@ export default function HuissierPage() {
     const matchSearch =
       !searchQuery ||
       acte.numero.includes(searchQuery) ||
-      acte.clientName?.includes(searchQuery);
+      acte.clientName?.includes(searchQuery) ||
+      acte.debtorName?.includes(searchQuery) ||
+      acte.tribunal?.includes(searchQuery) ||
+      acte.executionType?.includes(searchQuery);
     return matchFilter && matchSearch;
   });
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { bg: string; text: string; label: string; icon: React.ReactNode }> = {
-      في_الانتظار: { bg: "bg-yellow-100", text: "text-yellow-800", label: "قيد الانتظار", icon: <Clock className="w-4 h-4" /> },
-      موقعة: { bg: "bg-blue-100", text: "text-blue-800", label: "موقعة", icon: <CheckCircle className="w-4 h-4" /> },
-      مسجلة: { bg: "bg-green-100", text: "text-green-800", label: "مسجلة", icon: <CheckCircle className="w-4 h-4" /> },
+      قيد_التنفيذ: { bg: "bg-yellow-100", text: "text-yellow-800", label: "قيد التنفيذ", icon: <Clock className="w-4 h-4" /> },
+      تم_التبليغ: { bg: "bg-blue-100", text: "text-blue-800", label: "تم التبليغ للمدين", icon: <CheckCircle className="w-4 h-4" /> },
+      تم_الإنجاز: { bg: "bg-green-100", text: "text-green-800", label: "تنفيذ مكتمل", icon: <CheckCircle className="w-4 h-4" /> },
       مرفوضة: { bg: "bg-red-100", text: "text-red-800", label: "مرفوضة", icon: <AlertCircle className="w-4 h-4" /> },
+      مسجلة: { bg: "bg-purple-100", text: "text-purple-800", label: "مسجلة في المحكمة", icon: <AlertCircle className="w-4 h-4" /> },
+      في_الانتظار: { bg: "bg-gray-100", text: "text-gray-800", label: "في الانتظار", icon: <Clock className="w-4 h-4" /> },
     };
     const config = statusMap[status] || { bg: "bg-gray-100", text: "text-gray-800", label: status, icon: <AlertCircle className="w-4 h-4" /> };
     return (
@@ -218,12 +231,17 @@ export default function HuissierPage() {
 
   const getTypeIcon = (type: string) => {
     const icons: Record<string, string> = {
-      عريضة: "📄",
-      محضر: "📋",
-      إعلان: "📢",
-      حكم: "⚖️",
-      سند: "📑",
-      تقرير: "📊",
+      "تبليغ حكم": "⚖️",
+      "أمر أداء": "💸",
+      "محضر حجز": "🏛️",
+      "إشعار تنفيذ": "📢",
+      "إعلان تحضير": "📝",
+      "عريضة": "📄",
+      "محضر": "📋",
+      "إعلان": "📢",
+      "حكم": "⚖️",
+      "سند": "📑",
+      "تقرير": "📊",
     };
     return icons[type] || "📄";
   };
@@ -241,13 +259,13 @@ export default function HuissierPage() {
 
   return (
     <div className="flex h-screen bg-gray-100" dir="rtl">
-      {/* Sidebar */}
+      {/* الشريط الجانبي */}
       <div
         className={`fixed right-0 top-0 h-screen bg-gradient-to-b from-indigo-700 to-indigo-900 text-white transition-all duration-300 z-40 ${
           sidebarOpen ? "w-64" : "w-20"
         }`}
       >
-        {/* Logo */}
+        {/* الشعار */}
         <div className="p-6 border-b border-indigo-600 flex items-center justify-between">
           {sidebarOpen && (
             <div className="flex items-center gap-3">
@@ -268,7 +286,7 @@ export default function HuissierPage() {
           </button>
         </div>
 
-        {/* Navigation */}
+        {/* الملاحة */}
         <nav className="p-4 space-y-3">
           <NavLink
             icon={<BarChart3 className="w-5 h-5" />}
@@ -278,31 +296,31 @@ export default function HuissierPage() {
           />
           <NavLink
             icon={<FileText className="w-5 h-5" />}
-            label="الأعمال القانونية"
+            label="سجل التنفيذ"
             href="/dashboard/huissier/actes"
             open={sidebarOpen}
           />
           <NavLink
             icon={<Upload className="w-5 h-5" />}
-            label="الملفات المرفوعة"
+            label="مستودع الوثائق"
             href="/dashboard/huissier/documents"
             open={sidebarOpen}
           />
           <NavLink
             icon={<Users className="w-5 h-5" />}
-            label="الأطراف المعنية"
+            label="الأطراف التنفيذية"
             href="/dashboard/huissier/parties"
             open={sidebarOpen}
           />
           <NavLink
             icon={<Calendar className="w-5 h-5" />}
-            label="جدول المواعيد"
+            label="مواعيد التنفيذ"
             href="/dashboard/huissier/schedule"
             open={sidebarOpen}
           />
           <NavLink
             icon={<HelpCircle className="w-5 h-5" />}
-            label="الأسئلة الشائعة"
+            label="دليل التنفيذ"
             href="#"
             onClick={() => setShowAideModal(true)}
             open={sidebarOpen}
@@ -315,7 +333,7 @@ export default function HuissierPage() {
           />
         </nav>
 
-        {/* Footer */}
+        {/* التذييل */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-indigo-600">
           <button
             onClick={handleLogout}
@@ -327,14 +345,14 @@ export default function HuissierPage() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* المحتوى الرئيسي */}
       <div className={`flex-1 overflow-auto transition-all duration-300 ${sidebarOpen ? "mr-64" : "mr-20"}`}>
-        {/* Header */}
+        {/* الرأس */}
         <header className="bg-white shadow-sm sticky top-0 z-30">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">مرحباً بك، {user?.name}</h2>
-              <p className="text-sm text-gray-500">حاسب العدل - نظام إدارة الأعمال القانونية</p>
+              <p className="text-sm text-gray-500">لوحة قيادة تنفيذ الأحكام القضائية، الإشعارات، الحجز والتنفيذ العاجل</p>
             </div>
             <div className="flex items-center gap-4">
               <button className="p-2 hover:bg-gray-100 rounded-lg transition relative">
@@ -348,50 +366,50 @@ export default function HuissierPage() {
           </div>
         </header>
 
-        {/* Page Content */}
+        {/* محتوى الصفحة */}
         <main className="max-w-7xl mx-auto px-6 py-8">
-          {/* Quick Actions */}
+          {/* الإجراءات السريعة */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <button
               onClick={() => setShowUploadModal(true)}
               className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl font-semibold flex items-center gap-3 transition shadow-lg hover:shadow-xl"
             >
               <Upload className="w-5 h-5" />
-              رفع عمل جديد
+              تسجيل إشعار تنفيذ جديد
             </button>
             <Link
               href="/dashboard/huissier/actes"
               className="bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white px-6 py-4 rounded-xl font-semibold flex items-center gap-3 transition shadow-lg hover:shadow-xl text-center justify-center"
             >
               <Plus className="w-5 h-5" />
-              إنشاء عمل جديد
+              الانتقال إلى سجل الإشعارات التنفيذية
             </Link>
             <button
               onClick={() => setShowAideModal(true)}
               className="bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-4 rounded-xl font-semibold flex items-center gap-3 transition shadow-lg hover:shadow-xl"
             >
               <HelpCircle className="w-5 h-5" />
-              الحصول على المساعدة
+              دليل الحجز والتنفيذ العاجل
             </button>
           </div>
 
-          {/* Statistics */}
+          {/* الإحصائيات */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-            <StatCard label="إجمالي الأعمال" value={stats.totalActes} icon="📊" color="blue" />
-            <StatCard label="قيد المعالجة" value={stats.actesEnCours} icon="⏳" color="yellow" />
-            <StatCard label="الأعمال الموقعة" value={stats.actesSignes} icon="✅" color="green" />
-            <StatCard label="الأعمال المسجلة" value={stats.actesEnregistres} icon="📝" color="purple" />
-            <StatCard label="المبلغ الإجمالي" value={`${stats.montantTotal.toLocaleString()} د.ج`} icon="💰" color="indigo" />
+            <StatCard label="إجمالي إشعارات التنفيذ" value={stats.totalActes} icon="📢" color="blue" />
+            <StatCard label="في مرحلة التنفيذ" value={stats.actesEnCours} icon="⏳" color="yellow" />
+            <StatCard label="تم الإبلاغ" value={stats.actesSignes} icon="✅" color="green" />
+            <StatCard label="تنفيذ مكتمل" value={stats.actesEnregistres} icon="📝" color="purple" />
+            <StatCard label="إجمالي المطالبات" value={`${stats.montantTotal.toLocaleString()} د.ج`} icon="💰" color="indigo" />
           </div>
 
-          {/* Filters and Search */}
+          {/* التصفية والبحث */}
           <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute right-3 top-3 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="ابحث عن رقم العمل أو اسم الطرف..."
+                  placeholder="ابحث عن رقم الإشعار أو اسم المدين أو المحكمة..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -402,10 +420,10 @@ export default function HuissierPage() {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="">جميع الحالات</option>
-                <option value="في_الانتظار">قيد الانتظار</option>
-                <option value="موقعة">موقعة</option>
-                <option value="مسجلة">مسجلة</option>
+                <option value="">جميع حالات التنفيذ</option>
+                <option value="قيد_التنفيذ">قيد التنفيذ</option>
+                <option value="تم_التبليغ">تم التبليغ</option>
+                <option value="تم_الإنجاز">تم الإنجاز</option>
                 <option value="مرفوضة">مرفوضة</option>
               </select>
               <button className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-semibold hover:bg-indigo-100 transition flex items-center gap-2">
@@ -415,17 +433,19 @@ export default function HuissierPage() {
             </div>
           </div>
 
-          {/* Actes Table */}
+          {/* جدول الإشعارات */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">رقم العمل</th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">النوع</th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">الطرف</th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">التاريخ</th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">الحالة</th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">الإجراءات</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">رقم الإشعار</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">نوع التنفيذ</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">المدين</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">المحكمة</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">إجراء التنفيذ</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">تاريخ الإشعار</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">حالة التنفيذ</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">العمليات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -437,7 +457,9 @@ export default function HuissierPage() {
                         <span className="text-lg mr-2">{getTypeIcon(acte.type)}</span>
                         {acte.type}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{acte.clientName || "-"}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{acte.debtorName || acte.clientName || "-"}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{acte.tribunal || acte.district || "-"}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{acte.executionType || "-"}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {new Date(acte.dateCreation).toLocaleDateString("ar-DZ")}
                       </td>
@@ -462,7 +484,7 @@ export default function HuissierPage() {
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                      لا توجد أعمال بعد
+                      لا توجد إجراءات تنفيذية حتى الآن
                     </td>
                   </tr>
                 )}
@@ -476,14 +498,14 @@ export default function HuissierPage() {
                 href="/dashboard/huissier/actes"
                 className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
               >
-                عرض جميع الأعمال
+                عرض جميع الإجراءات التنفيذية
               </Link>
             </div>
           )}
         </main>
       </div>
 
-      {/* Upload Modal */}
+      {/* نافذة التحميل */}
       {showUploadModal && (
         <UploadModal
           onClose={() => setShowUploadModal(false)}
@@ -500,10 +522,10 @@ export default function HuissierPage() {
         />
       )}
 
-      {/* Aide Modal */}
+      {/* نافذة الدليل */}
       {showAideModal && <AideModal onClose={() => setShowAideModal(false)} />}
 
-      {/* Delete Confirmation */}
+      {/* تأكيد الحذف */}
       {showDeleteConfirm && (
         <DeleteConfirmModal
           onConfirm={() => handleDelete(showDeleteConfirm)}
@@ -514,7 +536,7 @@ export default function HuissierPage() {
   );
 }
 
-// Helper Components
+// مكونات مساعدة
 
 function NavLink({
   icon,
@@ -602,7 +624,7 @@ function UploadModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">رفع عمل جديد</h2>
+<h2 className="text-2xl font-bold text-gray-900 mb-4">رفع إخطار تنفيذ جديد</h2>
 
         {error && (
           <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
@@ -620,29 +642,29 @@ function UploadModal({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">اسم العمل</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">رقم الإشعار التنفيذي</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="أدخل اسم العمل"
+              placeholder="أدخل رقم الإشعار أو عنوان المحضر"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">نوع العمل</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">نوع الوثيقة التنفيذية</label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option>عريضة</option>
-              <option>محضر</option>
-              <option>إعلان</option>
-              <option>حكم</option>
-              <option>سند</option>
-              <option>تقرير</option>
+              <option>إشعار تنفيذ</option>
+              <option>محضر حجز</option>
+              <option>أمر أداء</option>
+              <option>عريضة تنفيذ</option>
+              <option>سند تنفيذ</option>
+              <option>تقرير تنفيذ</option>
             </select>
           </div>
 
@@ -689,29 +711,29 @@ function AideModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="space-y-4 max-h-96 overflow-y-auto">
-          <AideItem
-            q="كيف أرفع عمل جديد؟"
-            a="اضغط على زر 'رفع عمل جديد'، أدخل بيانات العمل، اختر النوع المناسب، ثم اختر الملف وأكمل العملية."
+                  <AideItem
+            q="كيف أرفع إشعار تنفيذ جديد؟"
+            a="اضغط على زر 'تسجيل إشعار تنفيذ جديد' ثم املأ رقم الإشعار، نوع الوثيقة التنفيذية، واختر الملف المطلوب."
           />
           <AideItem
-            q="ما هي الملفات المدعومة؟"
-            a="نقبل الملفات التالية: PDF، Word (DOC, DOCX)، Excel (XLSX)، والملفات النصية (TXT)، بحد أقصى 50 ميجابايت."
+            q="ما هي أنواع الوثائق التنفيذية المدعومة؟"
+            a="يدعم النظام إشعارات التنفيذ، محاضر الحجز، أوامر الأداء، عرائض التنفيذ، سندات التنفيذ، وتقرير التنفيذ."
           />
           <AideItem
-            q="كيف أتتبع حالة عملي؟"
-            a="انتقل إلى قسم 'الأعمال القانونية' حيث يمكنك رؤية جميع أعمالك وحالاتها الحالية."
+            q="كيف أتابع حالة التنفيذ؟"
+            a="في الشاشة الرئيسية سترى حالات التنفيذ: قيد التنفيذ، تم التبليغ، تنفيذ مكتمل، أو مرفوضة. يمكنك استخدام البحث والتصفية لتحديد الحالة."
           />
           <AideItem
-            q="هل يمكنني حذف عمل؟"
-            a="نعم، يمكنك حذف الأعمال التي لم تُوقع بعد. اضغط على أيقونة الحذف بجانب العمل."
+            q="هل يمكنني حذف إشعار؟"
+            a="يمكن حذف الإشعارات التنفيذية قبل أن يتم تأكيد التبليغ أو توقيعها. اضغط على أيقونة الحذف إذا كانت متاحة."
           />
           <AideItem
-            q="كيف أتصل بالدعم الفني؟"
-            a="يمكنك الاتصال بنا عبر البريد الإلكتروني أو الهاتف من صفحة الإعدادات."
+            q="كيف أضيف طرفاً في قضية التنفيذ؟"
+            a="انتقل إلى قسم 'الأطراف المعنية' وأضف بيانات المدين أو الدائن أو المحامي المرتبط بالقضية."
           />
           <AideItem
-            q="ما هي رسوم الخدمة؟"
-            a="تختلف رسومنا حسب نوع الخدمة والعمل. تواصل معنا للحصول على تفاصيل شاملة."
+            q="كيف أتلقى تنبيهات جلسات الحجز والتنفيذ؟"
+            a="تأكد من تفعيل إشعارات 'جلسات قضائية' و'التنفيذ الجديد' في صفحة الإعدادات."
           />
         </div>
 

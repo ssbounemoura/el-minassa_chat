@@ -9,17 +9,17 @@ export default function HuissierSettingsPage() {
       <Header title="الإعدادات" />
       <main className="max-w-4xl mx-auto px-6 py-8">
         <div className="space-y-6">
-          {/* Profile Settings */}
+          {/* إعدادات الملف الشخصي */}
           <SettingsSection
             icon={<User className="w-5 h-5" />}
             title="معلومات الملف الشخصي"
-            description="تحديث بيانات ملفك الشخصي"
+            description="تحديث بيانات حاسب التنفيذ وبيانات المكتب"
           >
             <div className="space-y-4">
-              <InputField label="الاسم الكامل" placeholder="أدخل اسمك" />
-              <InputField label="البريد الإلكتروني" placeholder="your@email.com" />
+              <InputField label="الاسم الكامل" placeholder="أدخل اسم الحاسب" />
+              <InputField label="البريد الإلكتروني" placeholder="سامي@مثال.dz" />
               <InputField label="رقم الهاتف" placeholder="+213 555 123 456" />
-              <InputField label="مكتب/مؤسسة" placeholder="اسم مكتب العدل" />
+              <InputField label="مسمى المكتب" placeholder="مكتب الحاسب القضائي" />
               <button className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center gap-2">
                 <Save className="w-4 h-4" />
                 حفظ التغييرات
@@ -27,7 +27,7 @@ export default function HuissierSettingsPage() {
             </div>
           </SettingsSection>
 
-          {/* Security Settings */}
+          {/* إعدادات الأمان */}
           <SettingsSection
             icon={<Lock className="w-5 h-5" />}
             title="الأمان"
@@ -44,21 +44,21 @@ export default function HuissierSettingsPage() {
             </div>
           </SettingsSection>
 
-          {/* Notifications */}
+          {/* الإشعارات */}
           <SettingsSection
             icon={<Bell className="w-5 h-5" />}
             title="الإشعارات"
             description="تخصيص تفضيلات الإشعارات"
           >
             <div className="space-y-3">
-              <ToggleSetting label="إخطارات الأعمال الجديدة" defaultChecked={true} />
-              <ToggleSetting label="إخطارات جلسات قضائية" defaultChecked={true} />
-              <ToggleSetting label="إخطارات التحديثات النظامية" defaultChecked={true} />
-              <ToggleSetting label="رسائل بريد إلكتروني أسبوعية" defaultChecked={false} />
+              <ToggleSetting label="إشعارات الإدخالات التنفيذية الجديدة" defaultChecked={true} />
+            <ToggleSetting label="إشعارات المواعيد القضائية" defaultChecked={true} />
+            <ToggleSetting label="تنبيهات حالة الحجز والتنفيذ" defaultChecked={true} />
+            <ToggleSetting label="تلقي تقارير التتبع الأسبوعية" defaultChecked={false} />
             </div>
           </SettingsSection>
 
-          {/* Storage & Upgrade */}
+          {/* التخزين والترقية */}
           <SettingsSection
             icon={<Zap className="w-5 h-5" />}
             title="التخزين والاشتراك"

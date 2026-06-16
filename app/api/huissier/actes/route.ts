@@ -17,35 +17,47 @@ export async function GET() {
       return NextResponse.json({ message: "غير مصرح" }, { status: 403 });
     }
 
-    // استرجاع الأعمال - محاكاة البيانات في الوقت الحالي
-    // في الإنتاج، يمكنك إضافة جدول جديد في Prisma
+    // استرجاع الأعمال التنفيذية - محاكاة بيانات قضايا حاسبي العدل
+    // في الإنتاج، يمكن ترحيل هذا إلى جدول التنفيذ أو ملف التنفيذ من Prisma
     const actes = [
       {
         id: "1",
         numero: "ح-2026-001",
-        type: "عريضة",
+        type: "إشعار تنفيذ",
         dateCreation: new Date().toISOString(),
-        status: "موقعة",
-        montant: 50000,
-        clientName: "أحمد محمد",
+        status: "قيد_التنفيذ",
+        montant: 450000,
+        creditorName: "شركة السعادة",
+        debtorName: "عمر حرز",
+        tribunal: "محكمة سوق أهراس",
+        executionType: "حجز تنفيذي",
+        referenceNumber: "REF-1101",
       },
       {
         id: "2",
         numero: "ح-2026-002",
-        type: "محضر",
+        type: "أمر أداء",
         dateCreation: new Date(Date.now() - 86400000).toISOString(),
-        status: "في_الانتظار",
-        montant: 75000,
-        clientName: "فاطمة علي",
+        status: "تم_التبليغ",
+        montant: 280000,
+        creditorName: "مؤسسة نور للإستيراد",
+        debtorName: "سامي بلقاسم",
+        tribunal: "محكمة سيدي بلعباس",
+        executionType: "إخلاء عقاري",
+        referenceNumber: "REF-1102",
       },
       {
         id: "3",
         numero: "ح-2026-003",
-        type: "إعلان",
+        type: "محضر حجز",
         dateCreation: new Date(Date.now() - 172800000).toISOString(),
-        status: "مسجلة",
-        montant: 100000,
-        clientName: "محمود سالم",
+        status: "تم_الإنجاز",
+        montant: 125000,
+        creditorName: "البنك الوطني الجزائري",
+        debtorName: "لطيفة خليل",
+        tribunal: "محكمة قسنطينة",
+        executionType: "حجز على الأجر",
+        referenceNumber: "REF-1103",
       },
     ];
 

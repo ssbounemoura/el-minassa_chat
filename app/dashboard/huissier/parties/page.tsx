@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, ArrowRight, Users } from "lucide-react";
+import { Plus, ArrowRight } from "lucide-react";
 
 export default function HuissierPartiesPage() {
   return (
     <div dir="rtl" className="min-h-screen bg-gray-50">
-      <Header title="الأطراف المعنية" />
+      <Header title="إدارة الأطراف التنفيذية" />
       <main className="max-w-7xl mx-auto px-6 py-8">
         <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center gap-2 mb-6">
           <Plus className="w-5 h-5" />
@@ -14,9 +14,9 @@ export default function HuissierPartiesPage() {
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <PartyCard name="أحمد محمد السيد" role="مدعي" phone="+213 555 123 456" email="ahmad@example.com" />
-          <PartyCard name="فاطمة علي حسن" role="مدعى عليه" phone="+213 555 789 012" email="fatima@example.com" />
-          <PartyCard name="محمود سالم كريم" role="محامي" phone="+213 555 345 678" email="mahmoud@example.com" />
+          <PartyCard name="سامي بن زين" role="طالب التنفيذ" phone="+213 555 123 456" email="سامي@تنفيذ.dz" />
+          <PartyCard name="ليلى بوجمعة" role="المدين" phone="+213 555 789 012" email="ليلى@مدين.dz" />
+          <PartyCard name="جميلة خرشي" role="محامية الطرف" phone="+213 555 345 678" email="جميلة@محامي.dz" />
         </div>
       </main>
     </div>

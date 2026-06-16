@@ -28,16 +28,16 @@ export default function HuissierDocumentsPage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-gray-50">
-      <Header title="الملفات المرفوعة" />
+      <Header title="مستودع تنفيذ الأحكام" />
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">مستودع الملفات</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">الوثائق التنفيذية الرئيسية</h2>
           <p className="text-gray-600 mb-6">
-            هنا يمكنك إدارة جميع الملفات المرفوعة والمتعلقة بأعمالك القانونية.
+            إدارة ملفات التنفيذ مثل إشعارات التنفيذ، محاضر الحجز، أوامر الأداء، وسندات التنفيذ.
           </p>
           <button className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center gap-2">
             <Upload className="w-5 h-5" />
-            رفع ملف جديد
+            رفع وثيقة تنفيذية جديدة
           </button>
         </div>
 
@@ -45,10 +45,11 @@ export default function HuissierDocumentsPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">اسم الملف</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">النوع</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">الإشعار / الملف</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">نوع الوثيقة</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">الحجم</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">تاريخ الرفع</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">تاريخ الإضافة</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">حالة الملف</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">الإجراءات</th>
               </tr>
             </thead>
@@ -57,12 +58,13 @@ export default function HuissierDocumentsPage() {
                 <td className="px-6 py-4 text-sm font-medium text-gray-900">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-red-500" />
-                    عريضة-دعوى-2026.pdf
+                    إشعار تنفيذ-2026.pdf
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">PDF</td>
                 <td className="px-6 py-4 text-sm text-gray-600">2.5 ميجابايت</td>
                 <td className="px-6 py-4 text-sm text-gray-600">15 يونيو 2026</td>
+                <td className="px-6 py-4 text-sm text-gray-600">قيد المعالجة</td>
                 <td className="px-6 py-4 text-sm flex gap-2">
                   <button className="p-2 hover:bg-blue-100 text-blue-600 rounded-lg" title="تحميل">
                     <Download className="w-4 h-4" />
@@ -76,12 +78,13 @@ export default function HuissierDocumentsPage() {
                 <td className="px-6 py-4 text-sm font-medium text-gray-900">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-500" />
-                    محضر-جلسة-2026.docx
+                    محضر-حجز-عقاري.docx
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">DOCX</td>
                 <td className="px-6 py-4 text-sm text-gray-600">1.2 ميجابايت</td>
                 <td className="px-6 py-4 text-sm text-gray-600">14 يونيو 2026</td>
+                <td className="px-6 py-4 text-sm text-gray-600">تم التبليغ</td>
                 <td className="px-6 py-4 text-sm flex gap-2">
                   <button className="p-2 hover:bg-blue-100 text-blue-600 rounded-lg" title="تحميل">
                     <Download className="w-4 h-4" />
