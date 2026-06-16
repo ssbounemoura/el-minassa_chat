@@ -454,8 +454,8 @@ export default function HuissierPage() {
                     <tr key={acte.id} className="hover:bg-gray-50 transition">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">{acte.numero}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">
-                        <span className="text-lg mr-2">{getTypeIcon(acte.type)}</span>
-                        {acte.type}
+                        <span className="text-lg mr-2">{getTypeIcon(acte.type || "")}</span>
+                        {acte.type || "-"}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">{acte.debtorName || acte.clientName || "-"}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{acte.tribunal || acte.district || "-"}</td>
